@@ -1,0 +1,17 @@
+[project]
+name = "ai-coding-rules"
+version = "0.1.0"
+description = "Global AI coding rules and engineering templates."
+readme = "CLAUDE.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+    "pyright",
+    "ruff",
+]
