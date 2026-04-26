@@ -1,0 +1,14 @@
+---
+description: Reinforcement learning development conventions
+alwaysApply: true
+---
+
+# Reinforcement Learning
+
+- **Framework**: default to PyTorch unless the repository already proves another stack is intentional.
+- **Tensor shapes**: every non-trivial tensor operation must document shape at the point of use, e.g. `# [batch_size, seq_len, hidden_dim]`.
+- **Experiment tracking**: prefer Weights & Biases (`wandb`) for metrics, configs, artifacts, sweeps, and reproducibility notes.
+- **Training layout**: keep environment interaction, replay/storage, model forward pass, loss computation, optimizer step, evaluation, and logging clearly separated.
+- **Reproducibility**: set seeds, log hyperparameters, record device info, and checkpoint model/optimizer state for long-running experiments.
+- **Metrics**: log reward, return, episode length, loss terms, learning rate, entropy/KL when relevant, and evaluation scores with stable names.
+- **Device discipline**: make CPU/GPU placement explicit; avoid silent `.to(...)` jumps hidden inside utility code.

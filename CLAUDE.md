@@ -1,0 +1,19 @@
+When working in this repository, you MUST strictly adhere to the following tools and conventions.
+
+# Global AI Coding Rules
+
+- Use `uv` only. Never install packages with `pip install`, `conda install`, Poetry, or pipenv.
+- Add dependencies with `uv add` / `uv add --dev`; use `uv pip` only for explicit pip-compatible workflows.
+- Run Python commands with `uv run ...`.
+- Write precise Type Hints for all new or modified Python code.
+- Prefer Pydantic for configs, external inputs, API payloads, experiment specs, and structured runtime data.
+- Prefer Ruff for lint/format and Pyright-compatible typing unless the repository defines a stricter standard.
+- Default RL stack is PyTorch.
+- Document non-trivial Tensor shapes inline, e.g. `# [batch_size, seq_len, hidden_dim]`.
+- Use `wandb` for experiment tracking when experiments need metrics, configs, artifacts, or reproducibility.
+- Keep RL training code modular: env, rollout/replay, model, loss, optimizer, eval, logging.
+- Make seeds, devices, checkpoints, and hyperparameters explicit.
+- Reuse existing modules before writing new abstractions.
+- Keep changes tight; no opportunistic rewrites.
+- Do not add silent fallbacks unless explicitly requested.
+- Optional Chinese-native docs mode: when explicitly enabled, write Python docstrings/comments in Simplified Chinese while preserving English technical terms in parentheses.
