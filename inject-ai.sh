@@ -13,6 +13,13 @@ cp -R -f "${SOURCE_DIR}/.cursor" "${TARGET_DIR}/"
 cp -f "${SOURCE_DIR}/CLAUDE.md" "${TARGET_DIR}/CLAUDE.md"
 cp -f "${SOURCE_DIR}/.cursorrules" "${TARGET_DIR}/.cursorrules"
 
+if [[ ! -f "${TARGET_DIR}/MEMORY.md" ]]; then
+  echo "🧠 未检测到 MEMORY.md，正在初始化项目记忆..."
+  cp -f "${SOURCE_DIR}/MEMORY-TEMPLATE.md" "${TARGET_DIR}/MEMORY.md"
+else
+  echo "🧠 已检测到 MEMORY.md，保留现有项目记忆。"
+fi
+
 echo "📦 正在注入 GitHub PR 模板与 CI 工作流..."
 cp -R -f "${SOURCE_DIR}/.github" "${TARGET_DIR}/"
 

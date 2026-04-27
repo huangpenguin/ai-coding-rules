@@ -1,5 +1,6 @@
 # Global AI Coding Rules
 
+- CRITICAL: Always read `MEMORY.md` (if exists) before proposing major architectural changes. Actively maintain and update it to preserve project context.
 - Use `uv` only. Never install packages with `pip install`, `conda install`, Poetry, or pipenv.
 - Add dependencies with `uv add` / `uv add --dev`; use `uv pip` only for explicit pip-compatible workflows.
 - Run Python commands with `uv run ...`.
