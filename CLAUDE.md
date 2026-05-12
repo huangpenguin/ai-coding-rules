@@ -1,5 +1,7 @@
 When working in this repository, you MUST strictly adhere to the following tools and conventions.
 
+CRITICAL: Always read `MEMORY.md` (if exists) before proposing major architectural changes. Actively maintain and update it to preserve project context.
+
 # Global AI Coding Rules
 
 - Use `uv` only. Never install packages with `pip install`, `conda install`, Poetry, or pipenv.
