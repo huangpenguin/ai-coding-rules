@@ -123,16 +123,4 @@ The main configurable parts are:
 
 The injection script assumes it is run from the target project root. It overwrites files with the same names, so review local changes before running it inside an existing project.
 
-## Keeping GitHub and GitLab in Sync
 
-This repository can be pushed to both remotes:
-
-```bash
-git push origin main
-git push gitlab main
-```
-
-Current intended remotes:
-
-- `origin`: `https://github.com/huangpenguin/ai-coding-rules.git`
-- `gitlab`: `https://gitlab.com/huang.pengbin/ai-coding-rules.git`

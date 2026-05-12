@@ -140,16 +140,3 @@ git commit -m "feat: add value network"
 
 `inject-ai.sh` 默认在“当前目录”执行注入，所以请先 `cd` 到目标项目根目录再运行。它会覆盖同名文件，建议在已有项目里先提交或暂存重要改动。
 
-## 同步 GitHub 和 GitLab
-
-这个仓库可以同时推送到 GitHub 和 GitLab：
-
-```bash
-git push origin main
-git push gitlab main
-```
-
-当前推荐的远程仓库：
-
-- `origin`: `https://github.com/huangpenguin/ai-coding-rules.git`
-- `gitlab`: `https://gitlab.com/huang.pengbin/ai-coding-rules.git`
