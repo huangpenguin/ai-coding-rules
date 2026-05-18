@@ -1,6 +1,6 @@
 ---
 description: Optional Chinese-native Python docstrings and comments
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Python Bilingual Docs Mode

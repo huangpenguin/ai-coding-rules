@@ -1,14 +1,16 @@
 ---
-description: Reinforcement learning development conventions
-alwaysApply: true
+description: RL 项目或 RL training 文件的开发约定
+globs: "**/*{rl,ppo,dqn,sac,a2c,reinforce,policy,value,rollout,replay,train}*.py"
+alwaysApply: false
 ---
 
 # Reinforcement Learning
 
-- **Framework**: default to PyTorch unless the repository already proves another stack is intentional.
-- **Tensor shapes**: every non-trivial tensor operation must document shape at the point of use, e.g. `# [batch_size, seq_len, hidden_dim]`.
-- **Experiment tracking**: prefer Weights & Biases (`wandb`) for metrics, configs, artifacts, sweeps, and reproducibility notes.
-- **Training layout**: keep environment interaction, replay/storage, model forward pass, loss computation, optimizer step, evaluation, and logging clearly separated.
-- **Reproducibility**: set seeds, log hyperparameters, record device info, and checkpoint model/optimizer state for long-running experiments.
-- **Metrics**: log reward, return, episode length, loss terms, learning rate, entropy/KL when relevant, and evaluation scores with stable names.
-- **Device discipline**: make CPU/GPU placement explicit; avoid silent `.to(...)` jumps hidden inside utility code.
+- 仅当项目明确是 RL、用户要求 RL、或当前文件明显属于 RL training 时应用本规则。
+- 默认 RL framework 是 PyTorch，除非仓库已经明确使用其它技术栈。
+- 非平凡 Tensor 操作必须在使用处标注 Tensor shape，例如 `# [batch_size, seq_len, hidden_dim]`。
+- 需要 metrics、configs、artifacts、sweeps 或可复现性记录时，优先使用 `wandb`。
+- RL training 代码保持模块化：env、rollout/replay、model、loss、optimizer、eval、logging 分清楚。
+- 长时间实验必须显式设置 seeds，记录 hyperparameters、device info，并保存 model/optimizer checkpoints。
+- 稳定记录 reward、return、episode length、loss terms、learning rate、entropy/KL 和 evaluation scores。
+- device placement 必须显式；避免把 `.to(...)` 隐藏在不透明工具函数里。

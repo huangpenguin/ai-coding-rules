@@ -9,6 +9,8 @@
 ## 包含内容
 
 - `.cursor/rules/`：Cursor 的项目规则，使用 `.mdc` 文件组织。
+- `.cursor/project-context/`：每个项目自己的 Agent 上下文，例如架构、当前计划、稳定决策。
+- `.cursor/lessons-learned/`：项目错题本，用来记录 bug、失败尝试、根因和修复方式。
 - `CLAUDE.md`：给 Claude Code 或其他支持仓库级说明的 Agent 使用。
 - `.cursorrules`：兼容旧版 Cursor 规则读取方式。
 - `ruff.toml`：Ruff lint / format 配置。
@@ -51,6 +53,8 @@ echo '[ -f ~/.bashrc ] && source ~/.bashrc' >> ~/.zshrc
 
 这样以后只需要维护一份 `~/.bashrc` 里的别名。
 
+如果是另一台已经配置过别名、且模板仓库路径仍然是 `~/.ai-coding-rules` 的服务器，只需要进入模板仓库执行 `git pull` 更新即可，不需要重复设置别名。新服务器或路径不同的服务器仍然需要先 clone 并设置一次 alias；也可以不设 alias，直接运行 `bash /path/to/ai-coding-rules/inject-ai.sh`。
+
 ## 使用场景
 
 ### 场景一：从零创建新项目
@@ -87,9 +91,34 @@ uv sync
 
 这样会把你的 AI 规则和本地检查工具加入项目，同时仍然使用原项目的 `pyproject.toml` 和 `uv` 工作流管理依赖。
 
-注意：`init-ai` 会覆盖同名配置文件。如果这个开源项目已经有自己的 Ruff、Pyright、pre-commit 或 GitHub CI 配置，建议先看一下 `git status`，确认覆盖是否符合你的预期。
+### 场景三：安全更新已有项目
 
-### 场景三：接手旧项目
+适合你已经执行过 `init-ai`，并且项目里可能已经手动追加过 `.mdc`、计划文件或项目笔记。
+
+先预览，不写入：
+
+```bash
+init-ai --update --dry-run
+```
+
+预览不会输出难读的完整 diff，而是显示简单状态：
+
+- `ADD`：目标项目没有这个文件，会新增。
+- `UPDATE`：模板管理的文件不同，会更新。
+- `SKIP`：文件已经一致，不需要处理。
+- `PRESERVE`：这是项目私有内容，会保留，不覆盖。
+
+确认没问题后再应用：
+
+```bash
+init-ai --update --apply
+```
+
+更新模式会保留 `MEMORY.md`、`.cursor/project-context/` 和 `.cursor/lessons-learned/`。它只更新模板管理的内容，例如 `.cursor/rules/*.mdc`、`CLAUDE.md`、`.cursorrules`、Ruff、Pyright、pre-commit 和 GitHub workflow。
+
+注意：首次执行的 `init-ai` 仍然适合新项目或你明确希望套用模板的项目。对已经个性化过的项目，优先使用 `--update --dry-run`。
+
+### 场景四：接手旧项目
 
 适合导师、课程、论文代码或早期 GitHub 项目，可能只有 `requirements.txt`，没有 `pyproject.toml`。
 
@@ -103,7 +132,7 @@ init-ai
 
 如果脚本没有检测到 `pyproject.toml`，它会跳过 `uv add --dev ruff pyright pre-commit`，避免强行改写旧项目的依赖结构。但它仍然会复制 AI 规则文件和共享配置文件，让 Agent 在阅读和修改旧代码时遵守你的开发习惯。
 
-### 场景四：日常 AI 结对编程
+### 场景五：日常 AI 结对编程
 
 平时写代码、改 bug、做 PR 时，可以按这个节奏来：
 
@@ -113,6 +142,16 @@ git commit -m "feat: add value network"
 ```
 
 如果 pre-commit 报错，例如 Ruff 发现未使用的 import，或者 Pyright 发现类型不匹配，不需要自己一点点猜。把完整报错贴回 Cursor 或 Claude Code，并要求它“根据 pre-commit 报错修复”。因为规则已经在项目里，Agent 会更容易按同一套标准修。
+
+## Agent 项目记忆
+
+这个模板提供三层项目记忆：
+
+- `MEMORY.md`：项目总体记忆，适合记录架构、里程碑、关键踩坑。
+- `.cursor/project-context/`：项目上下文，适合放 `overview.md`、`current-plan.md`、`decisions.md`。
+- `.cursor/lessons-learned/`：错题本，适合一事一文件记录 bug 的现象、根因、修复和避免方式。
+
+这些文件是给 Agent 快速读取用的，不是长文档。内容尽量短、清楚、可搜索。不要放密钥、token、账号、长聊天记录或隐私信息。
 
 ## 全局规则、项目模板和兼容性建议
 
@@ -130,6 +169,8 @@ git commit -m "feat: add value network"
 主要配置入口如下：
 
 - `.cursor/rules/*.mdc`：Cursor 规则文件。适合拆分成语言、框架、文档、Agent 行为等小规则。
+- `.cursor/project-context/`：项目私有上下文。更新模板时会保留已有内容。
+- `.cursor/lessons-learned/`：项目错题本。更新模板时会保留已有内容。
 - `CLAUDE.md`：跨 Agent 的仓库级说明，适合放稳定、通用的工程规范。
 - `.cursorrules`：旧版 Cursor 兼容入口。
 - `ruff.toml`：Ruff 代码风格和 lint 配置。
@@ -138,7 +179,7 @@ git commit -m "feat: add value network"
 - `.github/workflows/ci.yml`：GitHub CI。
 - `.github/PULL_REQUEST_TEMPLATE.md`：PR 描述模板。
 
-`inject-ai.sh` 默认在“当前目录”执行注入，所以请先 `cd` 到目标项目根目录再运行。它会覆盖同名文件，建议在已有项目里先提交或暂存重要改动。
+`inject-ai.sh` 默认在“当前目录”执行注入，所以请先 `cd` 到目标项目根目录再运行。新项目可以直接运行 `init-ai`；已有项目建议先运行 `init-ai --update --dry-run`，确认摘要后再执行 `init-ai --update --apply`。
 
 ## 维护本模板仓库（双远端推送）
 

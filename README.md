@@ -9,6 +9,8 @@ This repository is intentionally small. It works as a template that you clone on
 ## What It Includes
 
 - Cursor rules in `.cursor/rules/`
+- Project-specific agent notes in `.cursor/project-context/`
+- Debugging lessons in `.cursor/lessons-learned/`
 - Cross-agent guidance in `CLAUDE.md`
 - Legacy Cursor compatibility through `.cursorrules`
 - Ruff, Pyright, and pre-commit configuration
@@ -47,6 +49,8 @@ If you often switch between `bash` and `zsh`, put the alias in `~/.bashrc` and s
 echo '[ -f ~/.bashrc ] && source ~/.bashrc' >> ~/.zshrc
 ```
 
+On another server where the alias already points to the same repository path, update the template with `git pull` inside `~/.ai-coding-rules`. New servers, or servers using a different path, still need one-time clone and alias setup. You can also skip the alias and run `bash /path/to/ai-coding-rules/inject-ai.sh` directly.
+
 ## Usage
 
 ### Start a New Project
@@ -83,6 +87,31 @@ uv sync
 
 This keeps the upstream project dependencies managed by `uv` while adding your local AI engineering rules and checks.
 
+### Safely Update an Existing Project
+
+Use update mode after you have already run `init-ai` once in a project.
+
+Preview the changes first:
+
+```bash
+init-ai --update --dry-run
+```
+
+The preview uses simple status labels instead of raw diffs:
+
+- `ADD`: the file does not exist and would be created.
+- `UPDATE`: the managed template file differs and would be replaced.
+- `SKIP`: the file is already up to date.
+- `PRESERVE`: project-specific content exists and will not be overwritten.
+
+Apply the update only after the preview looks right:
+
+```bash
+init-ai --update --apply
+```
+
+Update mode preserves `MEMORY.md`, `.cursor/project-context/`, and `.cursor/lessons-learned/`. It updates managed template files such as `.cursor/rules/*.mdc`, `CLAUDE.md`, `.cursorrules`, Ruff, Pyright, pre-commit, and GitHub workflow files.
+
 ### Add Rules to a Legacy Project
 
 Use this when an older project only has `requirements.txt` or has no modern Python metadata.
@@ -113,6 +142,8 @@ If pre-commit fails, copy the full error output back into Cursor or Claude Code 
 The main configurable parts are:
 
 - `.cursor/rules/*.mdc`: Cursor project rules. Use these for focused behavior such as Python, RL, communication language, and README structure.
+- `.cursor/project-context/`: short project-specific notes for agents, such as architecture, active plans, and stable decisions.
+- `.cursor/lessons-learned/`: short notes about bugs, failed attempts, root causes, and fixes that future agents should check.
 - `CLAUDE.md`: portable instructions for Claude Code and other agents that read repository-level guidance.
 - `.cursorrules`: compatibility file for older Cursor workflows.
 - `ruff.toml`: Ruff linting and formatting rules.
@@ -121,7 +152,9 @@ The main configurable parts are:
 - `.github/workflows/ci.yml`: GitHub CI checks.
 - `.github/PULL_REQUEST_TEMPLATE.md`: PR description template.
 
-The injection script assumes it is run from the target project root. It overwrites files with the same names, so review local changes before running it inside an existing project.
+The injection script assumes it is run from the target project root. Use plain `init-ai` for first-time setup, and use `init-ai --update --dry-run` before applying updates in an existing project.
+
+Keep project memory files concise. They are for agent recall, not long documentation or transcripts. Never store secrets or credentials there.
 
 ## Maintaining This Template Repository
 

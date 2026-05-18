@@ -1,12 +1,13 @@
 ---
-description: 动态记忆与状态管理规范
+description: 项目上下文与错题本使用规范
 globs: "*"
 ---
 
-- **Initialization**: 在新会话中，优先读取根目录的 `MEMORY.md` 以获取项目架构和上下文。
-- **Memory Update**: 当完成核心功能开发、重构代码、或修复了导致长时间 Debug 的错误后，你必须主动提出更新 `MEMORY.md` 的「💡 关键决策与踩坑记录」或「🚦 当前开发状态」。
-- **Language**: `MEMORY.md` 的内容必须使用简体中文编写。
-
-**Continuous Update**:
-- 每次你完成一个重大功能的修改，或者修复了一个深层次的 Bug，你必须主动提出更新 `MEMORY.md`，把最新的状态和关键心得记录下来，作为未来的经验缓存。
-- 在后续的对话中，优先参考 `MEMORY.md` 中的架构设定，以保证代码风格和业务逻辑的绝对一致性。
+- 在进行架构、debugging、planning 等较大任务前，优先读取 `MEMORY.md`（如果存在）。
+- 修改项目特有架构、workflow 或 plan 前，读取 `.cursor/project-context/`。
+- 处理 bug、CI 失败、重复失败尝试时，读取 `.cursor/lessons-learned/`。
+- 完成关键决策、深层 bug 修复或多次失败后的有效解法时，主动建议追加简短记录。
+- 项目状态放入 `.cursor/project-context/`；可复用的 bug 经验放入 `.cursor/lessons-learned/`。
+- 记录必须短、清楚、方便 Agent 扫描；优先使用 bullet，不写长篇说明。
+- 禁止写入 secrets、credentials、private tokens 或长聊天记录。
+- 项目记忆默认使用简体中文；保留必要英文技术名。
