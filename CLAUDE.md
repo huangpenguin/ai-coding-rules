@@ -1,17 +1,17 @@
-在本仓库工作时，必须严格遵守以下工具与约定。
+When working in this repository, follow these tools and conventions strictly.
 
-CRITICAL: 在进行架构、debugging、planning 等较大任务前，优先读取 `MEMORY.md`（如果存在），并按需读取 `.cursor/project-context/` 与 `.cursor/lessons-learned/`。完成关键决策、深层 bug 修复或多次失败后的有效解法时，主动建议追加简短记录。
+CRITICAL: Before major architecture, debugging, or planning work, read `MEMORY.md` if it exists, and read `.cursor/project-context/` and `.cursor/lessons-learned/` when relevant. After major decisions, deep bug fixes, or repeated-failure resolutions, proactively suggest a concise memory update.
 
 # Global AI Coding Rules
 
-- 只使用 `uv`。不要使用 `pip install`、`conda install`、Poetry 或 pipenv 安装依赖。
-- 添加依赖使用 `uv add` / `uv add --dev`；只有明确需要 pip-compatible workflow 时才使用 `uv pip`。
-- 运行 Python 命令使用 `uv run ...`。
-- 新增或修改 Python 代码时，写精确的 Type Hints。
-- 配置、外部输入、API payload、实验规格和结构化运行时数据优先使用 Pydantic。
-- 除非仓库已有更严格标准，否则优先使用 Ruff 做 lint/format，并保持 Pyright-compatible typing。
-- 新增抽象前优先复用现有模块。
-- 保持改动收敛，不做顺手重构。
-- 除非用户明确要求，不要添加 silent fallbacks。
-- 项目记忆文件必须简短、方便 Agent 阅读；不要写入 secrets、credentials、tokens 或长聊天记录。
-- 可选 Chinese-native docs mode：用户明确启用时，Python docstrings/comments 使用简体中文，并保留英文技术名。
+- Use `uv` only. Do not install dependencies with `pip install`, `conda install`, Poetry, or pipenv.
+- Add dependencies with `uv add` / `uv add --dev`; use `uv pip` only for explicit pip-compatible workflows.
+- Run Python commands with `uv run ...`.
+- Write precise Type Hints for new or modified Python code.
+- Prefer Pydantic for configuration, external inputs, API payloads, experiment specs, and structured runtime data.
+- Prefer Ruff for linting/formatting and Pyright-compatible typing unless the repository defines stricter standards.
+- Reuse existing modules before introducing new abstractions.
+- Keep changes tightly scoped; avoid opportunistic refactors.
+- Do not add silent fallbacks unless explicitly requested.
+- Keep project memory files concise and agent-readable; never store secrets, credentials, tokens, or long transcripts in them.
+- Optional Chinese-native docs mode: when explicitly enabled in `.cursor/project-context/`, write Python docstrings/comments in Simplified Chinese while preserving English technical terms.

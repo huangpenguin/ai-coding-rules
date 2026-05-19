@@ -1,13 +1,13 @@
-## 🚀 What is this PR doing? (Agent, please summarize the changes)
+## What is this PR doing?
 
 - 
 
-## 🛠️ Tech Stack & Constraints Check
+## Tech Stack and Constraints Check
 
-- 依赖管理：是否严格使用了 `uv` 而不是 pip/conda？
-- 类型安全：所有新增的 Python 函数是否都有完整的 Type Hints？
-- RL 规范：所有关键的 PyTorch Tensor 操作是否都加上了 shape 注释（如 `[batch, seq, dim]`）？
+- Dependency management: does this use `uv` instead of pip/conda?
+- Type safety: do new Python functions include precise Type Hints?
+- Project rules: does this follow the relevant `.cursor/rules/*.mdc` guidance?
 
-## 🧪 Testing
+## Testing
 
-- 本地运行测试是否通过？
+- Did the relevant local tests or checks pass?

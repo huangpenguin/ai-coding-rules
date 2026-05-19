@@ -2,7 +2,7 @@
 
 **Language / 语言:** [English](README.md) | 简体中文
 
-这是一个给 Python / 强化学习（RL）项目使用的 AI 工程化规则模板。它的目标是：把 Cursor、Claude Code、本地代码检查、Git hook 和 CI 尽量统一起来，让 AI 改代码时不需要每次都重复提醒“请用 uv”“请写类型标注”“请遵守 Ruff/Pyright”。
+这是一个给 Python 项目使用的 AI 工程化规则模板。它的目标是：把 Cursor、Claude Code、本地代码检查、Git hook 和 CI 尽量统一起来，让 AI 改代码时不需要每次都重复提醒“请用 uv”“请写类型标注”“请遵守 Ruff/Pyright”。
 
 你可以把它理解成一套可复用的项目启动包：先把这个仓库克隆到本地固定位置，之后新建项目或接手旧项目时，运行一个命令就能把规则注入进去。
 
@@ -19,7 +19,7 @@
 - `.github/`：GitHub PR 模板和 CI 工作流。
 - `inject-ai.sh`：把以上文件复制到当前项目的注入脚本。
 
-这套规则默认偏向现代 Python 项目：使用 `uv` 管理环境和依赖，写明确的 Type Hints，优先用 Ruff 和 Pyright，并对 RL 项目强调模块拆分、实验可复现和 Tensor shape 注释。
+这套规则默认偏向现代 Python 项目：使用 `uv` 管理环境和依赖，写明确的 Type Hints，优先用 Ruff 和 Pyright。RL 规则是可选的 scoped rule，不再作为所有项目的全局假设。
 
 ## 初始安装
 
@@ -59,11 +59,11 @@ echo '[ -f ~/.bashrc ] && source ~/.bashrc' >> ~/.zshrc
 
 ### 场景一：从零创建新项目
 
-适合你准备新写一个 Python / RL 项目，例如 PPO、DQN、SAC 的实验脚手架。
+适合你准备新写一个 Python 项目。
 
 ```bash
-mkdir my-new-rl
-cd my-new-rl
+mkdir my-new-python
+cd my-new-python
 uv init
 git init
 init-ai
@@ -76,15 +76,15 @@ init-ai
 - 因为项目里有 `pyproject.toml`，脚本会执行 `uv add --dev ruff pyright pre-commit`。
 - 因为项目里有 `.git`，脚本会执行 `uv run pre-commit install`，安装提交前检查。
 
-之后就可以打开 Cursor，直接让 Agent 根据项目规则生成代码，例如：“根据本项目规范，帮我写一个 PPO 训练脚手架。”
+之后就可以打开 Cursor，直接让 Agent 根据项目规则生成代码，例如：“根据本项目规范，帮我写一个 CLI 工具脚手架。”
 
 ### 场景二：接手现代开源项目
 
 适合你克隆了一个比较新的项目，根目录已经有 `pyproject.toml`。
 
 ```bash
-git clone https://github.com/someone/cool-rl.git
-cd cool-rl
+git clone https://github.com/someone/cool-python.git
+cd cool-python
 init-ai
 uv sync
 ```
@@ -143,6 +143,18 @@ git commit -m "feat: add value network"
 
 如果 pre-commit 报错，例如 Ruff 发现未使用的 import，或者 Pyright 发现类型不匹配，不需要自己一点点猜。把完整报错贴回 Cursor 或 Claude Code，并要求它“根据 pre-commit 报错修复”。因为规则已经在项目里，Agent 会更容易按同一套标准修。
 
+### 场景六：强化学习（RL）项目
+
+RL 规则放在 `.cursor/rules/rl-conventions.mdc`，不是 always-on。只有当任务或文件明显和 RL 相关时才应用，例如 PPO/DQN/SAC、rollout/replay、training script、policy、value network、eval、logging 等。
+
+如果当前项目是 RL 项目，建议在 `.cursor/project-context/overview.md` 里写一句：
+
+```markdown
+本项目是 reinforcement learning 项目。处理 training、model、rollout、replay、eval、logging 时应用 `.cursor/rules/rl-conventions.mdc`。
+```
+
+非 RL 项目不需要删除这个 rule 文件；只要它不是 `alwaysApply`，通常不会影响日常任务。
+
 ## Agent 项目记忆
 
 这个模板提供三层项目记忆：
@@ -158,7 +170,7 @@ git commit -m "feat: add value network"
 比较稳妥的做法是“双层结构”：
 
 - 全局层：只放非常稳定、跨项目都适用的偏好，例如使用中文交流、优先解释风险、不要静默 fallback。
-- 项目层：放具体技术栈规则，例如 Python 必须用 `uv`、Ruff/Pyright 配置、RL Tensor shape 注释、CI 和 PR 模板。
+- 项目层：放具体技术栈规则，例如 Python 必须用 `uv`、Ruff/Pyright 配置、CI 和 PR 模板。RL Tensor shape 等规则只在 RL 项目中按需启用。
 
 这样做的好处是迁移成本低。以后如果从 Cursor 迁移到 Claude Code，`CLAUDE.md` 仍然能继续提供主要上下文；如果继续使用 Cursor，`.cursor/rules/*.mdc` 可以提供更细粒度的项目规则。
 

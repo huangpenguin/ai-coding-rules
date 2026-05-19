@@ -1,16 +1,16 @@
-# 🧠 Project Memory (项目记忆)
+# Project Memory
 
-> AI Agent 约束：每次对话前必须读取此文件。每次完成重大重构或修复深层 Bug 后，必须主动更新此文件。
+> Agent instruction: read this file before major work. After major refactors, deep bug fixes, or repeated-failure resolutions, proactively suggest a concise update.
 
-## 🏗️ 核心架构与业务逻辑
+## Architecture and Domain Logic
 
-- **项目目标**: (待 AI 或开发者填写)
-- **核心技术栈**: Python, uv, PyTorch...
+- **Project goal**: (to be filled by the developer or agent)
+- **Core stack**: Python, uv, ...
 
-## 🚦 当前开发状态 (Milestones)
+## Current Status
 
-- 任务 1: (待分配)
+- Task 1: (to be assigned)
 
-## 💡 关键决策与踩坑记录 (Lessons Learned)
+## Key Decisions and Lessons Learned
 
-- (记录由于架构、API 限制等引发的强制性约束，防止 AI 再次踩坑)
+- (Record constraints caused by architecture, API behavior, tooling limits, or recurring bugs.)

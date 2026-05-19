@@ -4,7 +4,7 @@ globs: "*"
 ---
 
 - Before major architecture, debugging, or planning work, read `MEMORY.md` if it exists.
-- Before changing project-specific architecture, workflow, or plans, read `.cursor/project-context/`.
+- Before changing project-specific architecture, workflow, or plans, read `.cursor/project-context/`. If it enables Chinese-native Python docs, apply `bilingual-comments.mdc`.
 - When debugging, fixing CI failures, or retrying after repeated failures, read `.cursor/lessons-learned/`.
 - After major decisions, deep bug fixes, or repeated-failure resolutions, proactively suggest a concise memory update.
 - Store project-specific state in `.cursor/project-context/`; store reusable bug lessons in `.cursor/lessons-learned/`.

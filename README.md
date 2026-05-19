@@ -1,8 +1,8 @@
 # AI Coding Rules
 
-**Language / 语言:** English | [简体中文](README.zh-CN.md)
+**Language:** English | [Simplified Chinese](README.zh-CN.md)
 
-Reusable AI coding rules and project bootstrap files for Python and reinforcement learning projects. The goal is to keep Cursor, Claude Code, local hooks, and CI aligned so that AI-generated changes follow the same engineering rules every time.
+Reusable AI coding rules and project bootstrap files for Python projects. The goal is to keep Cursor, Claude Code, local hooks, and CI aligned so that AI-generated changes follow the same engineering rules every time.
 
 This repository is intentionally small. It works as a template that you clone once, keep updated, and inject into new or existing projects with one command.
 
@@ -17,7 +17,7 @@ This repository is intentionally small. It works as a template that you clone on
 - GitHub PR template and CI workflow
 - `inject-ai.sh`, a script that copies the template into the current project
 
-The rules are biased toward modern Python projects that use `uv`, type hints, Ruff, Pyright, and explicit reinforcement learning conventions.
+The default rules are biased toward modern Python projects that use `uv`, type hints, Ruff, and Pyright. Reinforcement learning conventions are included as an optional, scoped rule instead of a global assumption.
 
 ## Setup
 
@@ -55,11 +55,11 @@ On another server where the alias already points to the same repository path, up
 
 ### Start a New Project
 
-Use this when you are creating a new Python or RL project from scratch.
+Use this when you are creating a new Python project from scratch.
 
 ```bash
-mkdir my-new-rl
-cd my-new-rl
+mkdir my-new-python
+cd my-new-python
 uv init
 git init
 init-ai
@@ -79,8 +79,8 @@ Then open the project in Cursor or Claude Code and ask the agent to follow the l
 Use this when a cloned project already has a `pyproject.toml`.
 
 ```bash
-git clone https://github.com/someone/cool-rl.git
-cd cool-rl
+git clone https://github.com/someone/cool-python.git
+cd cool-python
 init-ai
 uv sync
 ```
@@ -137,11 +137,23 @@ git commit -m "feat: add value network"
 
 If pre-commit fails, copy the full error output back into Cursor or Claude Code and ask it to fix the reported issues. The local rules are designed to make those fixes consistent instead of relying on repeated manual prompts.
 
+### Reinforcement Learning Projects
+
+RL conventions live in `.cursor/rules/rl-conventions.mdc` and are not always-on. They apply when the task or files are clearly RL-related, such as PPO/DQN/SAC code, rollout/replay logic, training scripts, policies, value networks, or similar files.
+
+For an RL project, write that fact in `.cursor/project-context/overview.md`, for example:
+
+```markdown
+This is a reinforcement learning project. Apply `.cursor/rules/rl-conventions.mdc` when working on training, models, rollout, replay, evaluation, or logging.
+```
+
+Non-RL projects can keep the rule file without deleting it; it should stay inactive unless the task becomes RL-related.
+
 ## Configuration
 
 The main configurable parts are:
 
-- `.cursor/rules/*.mdc`: Cursor project rules. Use these for focused behavior such as Python, RL, communication language, and README structure.
+- `.cursor/rules/*.mdc`: Cursor project rules. Use these for focused behavior such as Python, optional RL conventions, communication language, and README structure.
 - `.cursor/project-context/`: short project-specific notes for agents, such as architecture, active plans, and stable decisions.
 - `.cursor/lessons-learned/`: short notes about bugs, failed attempts, root causes, and fixes that future agents should check.
 - `CLAUDE.md`: portable instructions for Claude Code and other agents that read repository-level guidance.
