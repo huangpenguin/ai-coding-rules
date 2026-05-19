@@ -1,13 +1,13 @@
 ---
-description: 项目上下文与错题本使用规范
+description: Project context and lessons-learned workflow
 globs: "*"
 ---
 
-- 在进行架构、debugging、planning 等较大任务前，优先读取 `MEMORY.md`（如果存在）。
-- 修改项目特有架构、workflow 或 plan 前，读取 `.cursor/project-context/`。
-- 处理 bug、CI 失败、重复失败尝试时，读取 `.cursor/lessons-learned/`。
-- 完成关键决策、深层 bug 修复或多次失败后的有效解法时，主动建议追加简短记录。
-- 项目状态放入 `.cursor/project-context/`；可复用的 bug 经验放入 `.cursor/lessons-learned/`。
-- 记录必须短、清楚、方便 Agent 扫描；优先使用 bullet，不写长篇说明。
-- 禁止写入 secrets、credentials、private tokens 或长聊天记录。
-- 项目记忆默认使用简体中文；保留必要英文技术名。
+- Before major architecture, debugging, or planning work, read `MEMORY.md` if it exists.
+- Before changing project-specific architecture, workflow, or plans, read `.cursor/project-context/`.
+- When debugging, fixing CI failures, or retrying after repeated failures, read `.cursor/lessons-learned/`.
+- After major decisions, deep bug fixes, or repeated-failure resolutions, proactively suggest a concise memory update.
+- Store project-specific state in `.cursor/project-context/`; store reusable bug lessons in `.cursor/lessons-learned/`.
+- Keep notes short, clear, and easy for agents to scan. Prefer bullets over long prose.
+- Never store secrets, credentials, private tokens, or long transcripts in these files.
+- Write project memory in English unless the project explicitly chooses another language.

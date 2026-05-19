@@ -1,11 +1,11 @@
 # Project Context
 
-本目录存放当前项目专属的 Agent notes。
+This directory stores project-specific notes for agents.
 
-内容要短，方便 Agent 快速扫描。推荐：
+Keep files short and easy to scan. Recommended files:
 
-- `overview.md`：项目目标、技术栈、主 workflow。
-- `current-plan.md`：当前任务、约束、下一步。
-- `decisions.md`：稳定的项目决策。
+- `overview.md`: project goal, stack, and main workflow.
+- `current-plan.md`: active task, constraints, and next steps.
+- `decisions.md`: stable project decisions.
 
-不要存放 secrets、credentials 或长聊天记录。
+Do not store secrets, credentials, or long transcripts here.
