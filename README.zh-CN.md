@@ -140,3 +140,22 @@ git commit -m "feat: add value network"
 
 `inject-ai.sh` 默认在“当前目录”执行注入，所以请先 `cd` 到目标项目根目录再运行。它会覆盖同名文件，建议在已有项目里先提交或暂存重要改动。
 
+## 维护本模板仓库（双远端推送）
+
+本仓库同时在 **GitHub**（`origin`）和 **GitLab**（`gitlab`）维护镜像。在 `main` 上提交后，默认应**同时推送到两个远端**，除非你明确只想更新其中一边：
+
+```bash
+git push origin main
+git push gitlab main
+```
+
+一行命令：
+
+```bash
+git push origin main && git push gitlab main
+```
+
+若让 AI Agent 代为推送，请明确说明 **「同时 push 到 GitHub 和 GitLab」**（或指定 remote 名称）。不要默认只执行一次 `git push`——`main` 可能只跟踪其中一个远端，另一边会落后。
+
+若两边历史已分叉，请先确认以哪一边为准，再对落后的一方使用 `git push --force-with-lease <remote> main`，并先看过 diff。
+

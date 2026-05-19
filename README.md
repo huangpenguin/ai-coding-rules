@@ -123,4 +123,23 @@ The main configurable parts are:
 
 The injection script assumes it is run from the target project root. It overwrites files with the same names, so review local changes before running it inside an existing project.
 
+## Maintaining This Template Repository
+
+This repo is mirrored on **GitHub** (`origin`) and **GitLab** (`gitlab`). After you commit on `main`, push to **both** remotes unless you explicitly want a single-remote update:
+
+```bash
+git push origin main
+git push gitlab main
+```
+
+One-liner:
+
+```bash
+git push origin main && git push gitlab main
+```
+
+If you ask an AI agent to push changes for this repository, say **“push to both GitHub and GitLab”** (or name the remotes). Do not assume a single `git push` is enough—`main` may track only one remote, and the other mirror can drift.
+
+If remotes have diverged and you have confirmed which side is canonical, use `git push --force-with-lease <remote> main` on the outdated remote only after reviewing the diff.
+
 
