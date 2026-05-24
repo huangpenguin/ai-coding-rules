@@ -202,6 +202,7 @@ echo
 echo "Syncing Docker / MLOps template files..."
 copy_managed_file "${SOURCE_DIR}/Dockerfile" "${TARGET_DIR}/Dockerfile"
 copy_managed_tree "${SOURCE_DIR}/.devcontainer" "${TARGET_DIR}/.devcontainer"
+copy_managed_tree "${SOURCE_DIR}/docs" "${TARGET_DIR}/docs"
 copy_if_missing "${SOURCE_DIR}/train.py" "${TARGET_DIR}/train.py"
 
 echo

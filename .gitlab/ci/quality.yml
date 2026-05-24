@@ -1,0 +1,45 @@
+# 质量检查 job：跑在 GitLab Shared Runner 的 Docker 容器里。
+# 不需要 GPU tag，也不访问本机 /mnt/nfs_data。
+
+# Hidden job（以 . 开头）：只作模板，不会单独执行
+.quality_rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+.quality_base:
+  stage: quality
+  image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim # 在 uv 容器里执行检查
+  extends: .quality_rules # 复用 .quality_rules 中的 rules
+  cache:
+    key:
+      files:
+        - pyproject.toml
+        - uv.lock # 有 lock 时 cache key 更稳定
+    paths:
+      - .venv/
+      - .cache/uv/
+    policy: pull-push
+  before_script:
+    - |
+      if [ ! -f pyproject.toml ]; then
+        echo "No pyproject.toml found; skipping Python quality checks."
+        exit 0
+      fi
+    - uv sync --dev
+
+# 以下三个 job 并行执行，互不等待（同一 stage 内默认并行）
+quality:ruff-check:
+  extends: .quality_base
+  script:
+    - uv run ruff check .
+
+quality:ruff-format:
+  extends: .quality_base
+  script:
+    - uv run ruff format --check .
+
+quality:pyright:
+  extends: .quality_base
+  script:
+    - uv run pyright

@@ -7,7 +7,7 @@
 - [ ] 在测试项目中运行 `init-ai`（或先 `init-ai --update --dry-run`，再 `--apply`）。
 - [ ] 确认以下文件存在：
   - `.gitlab-ci.yml`
-  - `.gitlab/ci/pipeline.yml`
+  - `.gitlab/ci/quality.yml`
   - `.gitlab/ci/train.yml`
   - `Dockerfile`
   - `.devcontainer/devcontainer.json`
@@ -62,9 +62,9 @@ docker run --rm --gpus all --shm-size 16g \
 
 ## 5. GitLab Runner 训练调度
 
-注册带 `gpu` 标签的 self-hosted shell executor Runner，然后 push 到 GitLab。
+注册带 `gpu-server` 标签的 self-hosted shell executor Runner，然后 push 到 GitLab。
 
-- [ ] Pipeline 中出现 `quality` 和 `run_training`。
+- [ ] Pipeline 中出现 `quality:*` job 和 `run_training`。
 - [ ] 手动点击 `run_training` 的 Play 能成功，或 commit message 含 `[run train]` 能自动触发。
 - [ ] 在 Runner 主机上，`docker ps | grep train-` 能看到后台容器。
 - [ ] `docker logs -f train-<project>-<branch>` 能看到训练日志。
@@ -101,14 +101,22 @@ python train.py
 
 完整 pipeline 放在 `.gitlab/ci/` 下：
 
-- `.gitlab/ci/pipeline.yml`：质量检查
+- `.gitlab/ci/quality.yml`：并行质量检查
 - `.gitlab/ci/train.yml`：GPU 训练调度
 
-根目录 `.gitlab-ci.yml` 只是入口文件：
+根目录 `.gitlab-ci.yml` 负责编排，并 include 具体 job 文件：
 
 ```yaml
+default:
+  interruptible: true
+
+stages:
+  - quality
+  - deploy
+
 include:
-  - local: .gitlab/ci/pipeline.yml
+  - local: .gitlab/ci/quality.yml
+  - local: .gitlab/ci/train.yml
 ```
 
 GitLab 默认只认仓库根目录的 CI 入口文件，所以根目录仍需保留这个 include。只有在你明确修改项目设置 **Settings → CI/CD → CI/CD configuration file** 时，才可以完全去掉根目录文件。

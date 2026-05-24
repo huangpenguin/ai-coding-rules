@@ -1,25 +1,38 @@
+# GPU 训练调度 job：跑在 self-hosted Runner 上（shell executor + 本地 Docker）。
+# 注册 Runner 时填写的 tag 必须和下方 tags 完全一致。
+# 触发方式：GitLab 网页手动 Play，或 commit message 含 [run train]。
+
 run_training:
   stage: deploy
   tags:
-    - gpu
+    - gpu-server # 只分配给带 gpu-server 标签的 Runner；在 Settings → CI/CD → Runners 查看
+  timeout: 30m # 防止 docker build 长时间卡住
+  resource_group: gpu-training # 同项目训练 job 互斥，避免同时抢 GPU
+  needs: [] # 不等待 quality job；训练可独立派发（网页 Play 后由 Runner 领取执行）
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[run train\]/'
-      when: always
-    - when: manual
+    # main 分支 + commit message 含 [run train] → 自动执行
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /\[run train\]/'
+      when: on_success
+    # main 分支其他 push → 在 GitLab Pipelines 页面手动点 Play；失败不阻塞整个 pipeline
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
       allow_failure: true
   variables:
-    BUILD_MLOPS_IMAGE: "true"
-    MLOPS_DOCKER_IMAGE: ""
-    MLOPS_RUN_ROOT: "$HOME/mlops-runs"
-    TRAIN_COMMAND: "python train.py"
-    DATA_MOUNT_SOURCE: "/mnt/nfs_data"
-    DATA_MOUNT_TARGET: "/data"
+    BUILD_MLOPS_IMAGE: "true" # true：用项目 Dockerfile 构建镜像；false：直接用 MLOPS_DOCKER_IMAGE
+    MLOPS_DOCKER_IMAGE: "" # 非空时跳过 build，直接使用指定镜像
+    MLOPS_RUN_ROOT: "$HOME/mlops-runs" # 持久运行目录，位于 Runner 所在主机
+    TRAIN_COMMAND: "python train.py" # 容器内执行的命令；真实项目可改为 uv run python -m src.train
+    DATA_MOUNT_SOURCE: "/mnt/nfs_data" # 宿主机数据路径
+    DATA_MOUNT_TARGET: "/data" # 容器内挂载点
   script:
     - |
       set -euo pipefail
+      # 以下脚本在 GPU 服务器的 Runner 上直接执行，不是在 GitLab 云容器里
 
       CONTAINER_NAME="train-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_REF_SLUG}"
       RUN_DIR="${MLOPS_RUN_ROOT}/${CI_PROJECT_PATH_SLUG}/${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+
+      # 选择镜像：显式指定 > 本地 build > PyTorch 官方 fallback
       if [[ -n "${MLOPS_DOCKER_IMAGE:-}" ]]; then
         IMAGE="${MLOPS_DOCKER_IMAGE}"
       elif [[ "${BUILD_MLOPS_IMAGE}" == "true" ]]; then
@@ -28,6 +41,7 @@ run_training:
         IMAGE="pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel"
       fi
 
+      # 复制 checkout 到持久目录，避免 GitLab 清理 workspace 后训练文件丢失
       echo "Preparing durable run directory: ${RUN_DIR}"
       mkdir -p "${RUN_DIR}"
       tar \
@@ -45,16 +59,17 @@ run_training:
         docker build -t "${IMAGE}" -f "${RUN_DIR}/Dockerfile" "${RUN_DIR}"
       fi
 
+      # 停止同分支旧容器，避免重复占用 GPU
       echo "Stopping previous container for this branch, if any: ${CONTAINER_NAME}"
       docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
       docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
       docker_args=(
         run
-        -d
+        -d # 后台启动；CI job 会很快结束，训练在容器内继续跑
         --gpus all
         --name "${CONTAINER_NAME}"
-        --shm-size 16g
+        --shm-size 16g # PyTorch DataLoader 多进程需要足够 shared memory
         --user "$(id -u):$(id -g)"
         --workdir /workspace
         -e HOME=/tmp
@@ -63,12 +78,14 @@ run_training:
         -v "${RUN_DIR}:/workspace"
       )
 
+      # 数据盘存在时才挂载；不存在则跳过（smoke test 仍可跑）
       if [[ -n "${DATA_MOUNT_SOURCE:-}" && -d "${DATA_MOUNT_SOURCE}" ]]; then
         docker_args+=(-v "${DATA_MOUNT_SOURCE}:${DATA_MOUNT_TARGET:-/data}")
       else
         echo "DATA_MOUNT_SOURCE is unset or missing; starting without dataset mount."
       fi
 
+      # 密钥通过 GitLab CI/CD Variables 传入，不要写进仓库
       if [[ -n "${WANDB_API_KEY:-}" ]]; then
         docker_args+=(-e WANDB_API_KEY)
       fi
@@ -83,4 +100,5 @@ run_training:
       docker "${docker_args[@]}"
       echo "Training container started: ${CONTAINER_NAME}"
       echo "Run directory: ${RUN_DIR}"
+      # CI job 成功只代表容器已启动；训练结果请在本机执行：
       echo "Follow logs with: docker logs -f ${CONTAINER_NAME}"

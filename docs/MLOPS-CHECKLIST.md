@@ -7,7 +7,7 @@ Use this checklist after running `init-ai` in a target project or after updating
 - [ ] Run `init-ai` (or `init-ai --update --dry-run` then `--apply`) in a test project.
 - [ ] Confirm these files exist:
   - `.gitlab-ci.yml`
-  - `.gitlab/ci/pipeline.yml`
+  - `.gitlab/ci/quality.yml`
   - `.gitlab/ci/train.yml`
   - `Dockerfile`
   - `.devcontainer/devcontainer.json`
@@ -62,9 +62,9 @@ docker run --rm --gpus all --shm-size 16g \
 
 ## 5. GitLab Runner training dispatch
 
-Register a self-hosted shell executor runner with tag `gpu`, then push to GitLab.
+Register a self-hosted shell executor runner with tag `gpu-server`, then push to GitLab.
 
-- [ ] Pipeline shows `quality` and `run_training`.
+- [ ] Pipeline shows `quality:*` jobs and `run_training`.
 - [ ] Manual Play on `run_training` succeeds, or commit message `[run train]` triggers it.
 - [ ] On the runner host, `docker ps | grep train-` shows the detached container.
 - [ ] `docker logs -f train-<project>-<branch>` shows training output.
@@ -101,17 +101,25 @@ python train.py
 
 The full pipeline lives under `.gitlab/ci/`:
 
-- `.gitlab/ci/pipeline.yml`: quality checks
+- `.gitlab/ci/quality.yml`: parallel quality checks
 - `.gitlab/ci/train.yml`: GPU training dispatch
 
-The root `.gitlab-ci.yml` is only a thin entrypoint:
+The root `.gitlab-ci.yml` owns orchestration and includes the job files:
 
 ```yaml
+default:
+  interruptible: true
+
+stages:
+  - quality
+  - deploy
+
 include:
-  - local: .gitlab/ci/pipeline.yml
+  - local: .gitlab/ci/quality.yml
+  - local: .gitlab/ci/train.yml
 ```
 
-GitLab requires a root CI entry file by default. Keep this one-line include at the repository root unless you explicitly change the project setting **Settings → CI/CD → CI/CD configuration file**.
+GitLab requires a root CI entry file by default. Keep this include at the repository root unless you explicitly change the project setting **Settings → CI/CD → CI/CD configuration file**.
 
 ## 8. Common overrides
 
