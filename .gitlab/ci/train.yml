@@ -1,6 +1,25 @@
-# GPU 训练调度 job：跑在 self-hosted Runner 上（shell executor + 本地 Docker）。
-# 注册 Runner 时填写的 tag 必须和下方 tags 完全一致。
-# 触发方式：GitLab 网页手动 Play，或 commit message 含 [run train]。
+# =============================================================================
+# train.yml — GPU 训练调度（docker build + docker run）
+# =============================================================================
+#
+# 【跑在哪】gpu01 上自建的 self-hosted Runner（tags: gpu-server），
+#           不是 GitLab 免费共享 Runner。网页点 Play 只是「下命令」，
+#           实际执行仍在你的 GPU 服务器上。
+#
+# 【Runner 必须用 shell executor，不要用 docker executor】
+#   shell executor  = CI 脚本直接在 GPU 宿主机 bash 里跑（像 SSH 登录后敲命令）
+#   docker executor = CI 脚本先被塞进 ubuntu 等临时容器 → 里面没有 docker/GPU → 必挂
+#
+# 【两层 Docker 之「第 2 层」— 训练容器】
+# 本 job 没有 image: 字段；脚本里显式调用：
+#   docker build -f Dockerfile   ← 项目 Dockerfile 在这里才用到
+#   docker run --gpus all ...    ← 训练容器（PyTorch + GPU）
+#
+#   GitLab Play → shell 在宿主机跑 script → docker build/run 起训练容器
+#
+# 注册 Runner 时 tag 须与下方 tags 一致；详见 docs/MLOPS-CHECKLIST.zh-CN.md 第 5 节。
+# 触发：GitLab 网页 manual Play，或 commit message 含 [run train]。
+# =============================================================================
 
 run_training:
   stage: deploy

@@ -1,5 +1,18 @@
-# 质量检查 job：跑在 GitLab Shared Runner 的 Docker 容器里。
-# 不需要 GPU tag，也不访问本机 /mnt/nfs_data。
+# =============================================================================
+# quality.yml — 代码质量检查（Ruff / Pyright）
+# =============================================================================
+#
+# 【跑在哪】GitLab 共享 Runner（云端），不是 gpu-server。
+# 【不需要】tags: gpu-server，也不访问 /mnt/nfs_data。
+#
+# 【两层 Docker 之「第 1 层」— CI job 环境】
+# 下面 image: 指定的是「跑 CI 脚本的临时容器」，由 GitLab Runner 自动拉起。
+# 这个镜像 ≠ 项目根目录的 Dockerfile；Dockerfile 不参与 quality job。
+#
+#   GitLab 派 job → Runner 起 uv 容器 → 在容器里执行 uv run ruff / pyright
+#
+# 这类 job 适合 docker executor + 指定 image，不需要 GPU 宿主机。
+# =============================================================================
 
 # Hidden job（以 . 开头）：只作模板，不会单独执行
 .quality_rules:

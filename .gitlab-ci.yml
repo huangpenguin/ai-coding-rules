@@ -1,5 +1,9 @@
 # 根 CI 编排文件：定义全局 pipeline 行为，具体 job 拆到 .gitlab/ci/ 下。
 # GitLab 会在 push / MR 时读取本文件并创建 pipeline。
+#
+# 本仓库两类 job 对比（初学 CI 时容易混淆「两层 Docker」，见各 include 文件开头）：
+#   quality.yml  → GitLab 共享 Runner + image（第 1 层：CI 临时容器）
+#   train.yml    → gpu-server 自建 Runner + shell executor + 脚本里 docker build/run（第 2 层：训练容器）
 
 default:
   interruptible: true # MR 有新提交时，取消旧的 pipeline，节省 Runner 资源
