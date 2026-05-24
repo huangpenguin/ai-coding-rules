@@ -18,42 +18,57 @@
 - `.pre-commit-config.yaml`：提交前自动检查。
 - `.github/`：GitHub PR 模板和 CI 工作流。
 - `inject-ai.sh`：把以上文件复制到当前项目的注入脚本。
+- `install.sh`：一次性安装脚本，会自动 clone 模板并配置 `init-ai` 别名。
 
 这套规则默认偏向现代 Python 项目：使用 `uv` 管理环境和依赖，写明确的 Type Hints，优先用 Ruff 和 Pyright。RL 规则是可选的 scoped rule，不再作为所有项目的全局假设。
 
 ## 初始安装
 
-先把这个仓库克隆到一个固定位置，例如：
+在新机器上只需执行一次（会自动 clone 到 `~/.ai-coding-rules` 并写入 `init-ai` 别名）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/huangpenguin/ai-coding-rules/main/install.sh | bash
+```
+
+然后重新加载 Shell：
+
+```bash
+source ~/.zshrc   # 或 source ~/.bashrc
+```
+
+之后就可以在任意项目目录直接使用 `init-ai`。模板有更新时，**不需要**重复执行 curl。
+
+### 后续更新模板
+
+当你修改了 `ai-coding-rules` 仓库后，在本机更新模板源：
+
+```bash
+cd ~/.ai-coding-rules
+git pull
+```
+
+再把新规则同步到某个已有项目：
+
+```bash
+cd your-project
+init-ai --update --dry-run
+init-ai --update --apply
+```
+
+### 手动安装（可选）
+
+如果你不想用 curl，也可以手动 clone 后运行安装脚本：
 
 ```bash
 git clone https://github.com/huangpenguin/ai-coding-rules.git ~/.ai-coding-rules
+bash ~/.ai-coding-rules/install.sh
 ```
 
-然后设置一个别名，让你在任意项目目录都能运行 `init-ai`。
-
-如果你当前 Shell 是 `zsh`：
+也可以不使用别名，直接运行：
 
 ```bash
-echo 'alias init-ai="bash ~/.ai-coding-rules/inject-ai.sh"' >> ~/.zshrc
-source ~/.zshrc
+bash ~/.ai-coding-rules/inject-ai.sh
 ```
-
-如果你当前 Shell 是 `bash`：
-
-```bash
-echo 'alias init-ai="bash ~/.ai-coding-rules/inject-ai.sh"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-如果你经常在 `bash` 和 `zsh` 之间切换，可以把别名统一写到 `~/.bashrc`，再让 `zsh` 读取它：
-
-```bash
-echo '[ -f ~/.bashrc ] && source ~/.bashrc' >> ~/.zshrc
-```
-
-这样以后只需要维护一份 `~/.bashrc` 里的别名。
-
-如果是另一台已经配置过别名、且模板仓库路径仍然是 `~/.ai-coding-rules` 的服务器，只需要进入模板仓库执行 `git pull` 更新即可，不需要重复设置别名。新服务器或路径不同的服务器仍然需要先 clone 并设置一次 alias；也可以不设 alias，直接运行 `bash /path/to/ai-coding-rules/inject-ai.sh`。
 
 ## 使用场景
 

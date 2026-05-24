@@ -16,40 +16,57 @@ This repository is intentionally small. It works as a template that you clone on
 - Ruff, Pyright, and pre-commit configuration
 - GitHub PR template and CI workflow
 - `inject-ai.sh`, a script that copies the template into the current project
+- `install.sh`, a one-time bootstrap script that clones the template and configures the `init-ai` alias
 
 The default rules are biased toward modern Python projects that use `uv`, type hints, Ruff, and Pyright. Reinforcement learning conventions are included as an optional, scoped rule instead of a global assumption.
 
 ## Setup
 
-Clone this repository once into a stable local path:
+Run this once on a new machine. It clones the template to `~/.ai-coding-rules` and adds the `init-ai` alias to your shell config:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/huangpenguin/ai-coding-rules/main/install.sh | bash
+```
+
+Then reload your shell:
+
+```bash
+source ~/.zshrc   # or source ~/.bashrc
+```
+
+After that, use `init-ai` from any project directory. You do not need to run the curl command again when the template changes.
+
+### Update the template later
+
+When this repository changes, update your local template copy with Git:
+
+```bash
+cd ~/.ai-coding-rules
+git pull
+```
+
+Then sync an existing project:
+
+```bash
+cd your-project
+init-ai --update --dry-run
+init-ai --update --apply
+```
+
+### Manual setup (optional)
+
+If you prefer not to use `install.sh`:
 
 ```bash
 git clone https://github.com/huangpenguin/ai-coding-rules.git ~/.ai-coding-rules
+bash ~/.ai-coding-rules/install.sh
 ```
 
-Add a shell alias so you can inject the template from any project directory.
-
-For `zsh`:
+You can also run the injector directly without an alias:
 
 ```bash
-echo 'alias init-ai="bash ~/.ai-coding-rules/inject-ai.sh"' >> ~/.zshrc
-source ~/.zshrc
+bash ~/.ai-coding-rules/inject-ai.sh
 ```
-
-For `bash`:
-
-```bash
-echo 'alias init-ai="bash ~/.ai-coding-rules/inject-ai.sh"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-If you often switch between `bash` and `zsh`, put the alias in `~/.bashrc` and source it from `~/.zshrc`:
-
-```bash
-echo '[ -f ~/.bashrc ] && source ~/.bashrc' >> ~/.zshrc
-```
-
-On another server where the alias already points to the same repository path, update the template with `git pull` inside `~/.ai-coding-rules`. New servers, or servers using a different path, still need one-time clone and alias setup. You can also skip the alias and run `bash /path/to/ai-coding-rules/inject-ai.sh` directly.
 
 ## Usage
 
