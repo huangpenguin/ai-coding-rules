@@ -21,6 +21,8 @@
       - .cache/uv/
     policy: pull-push
   before_script:
+    # pyright 通过 nodeenv 安装 Node；slim 镜像缺少 libatomic.so.1
+    - apt-get update && apt-get install -y --no-install-recommends libatomic1
     - |
       if [ ! -f pyproject.toml ]; then
         echo "No pyproject.toml found; skipping Python quality checks."
