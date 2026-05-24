@@ -62,7 +62,35 @@ docker run --rm --gpus all --shm-size 16g \
 
 ## 5. GitLab Runner training dispatch
 
-Register a self-hosted shell executor runner with tag `gpu-server`, then push to GitLab.
+Register a self-hosted runner with tag `gpu-server`, then push to GitLab.
+
+**Important: use the `shell` executor, not the `docker` executor.**
+
+`run_training` runs `docker build` and `docker run --gpus all` directly on the GPU host. If the runner uses the `docker` executor, the job runs inside an `ubuntu:22.04` helper container with no Docker CLI and no GPU access. Typical failure:
+
+```text
+/usr/bin/bash: docker: command not found
+```
+
+On the GPU server, inspect the runner config:
+
+```bash
+sudo cat /etc/gitlab-runner/config.toml
+# or for user-mode runners: cat ~/.gitlab-runner/config.toml
+```
+
+The runner block should contain:
+
+```toml
+[[runners]]
+  executor = "shell"
+```
+
+If it currently says `executor = "docker"`, switch it to `shell` and restart the runner:
+
+```bash
+sudo gitlab-runner restart
+```
 
 - [ ] Pipeline shows `quality:*` jobs and `run_training`.
 - [ ] Manual Play on `run_training` succeeds, or commit message `[run train]` triggers it.

@@ -62,7 +62,37 @@ docker run --rm --gpus all --shm-size 16g \
 
 ## 5. GitLab Runner 训练调度
 
-注册带 `gpu-server` 标签的 self-hosted shell executor Runner，然后 push 到 GitLab。
+注册带 `gpu-server` 标签的 self-hosted Runner，然后 push 到 GitLab。
+
+**重要：必须使用 `shell` executor，不要用 `docker` executor。**
+
+`run_training` 会在 Runner 所在 GPU 宿主机上直接执行 `docker build` / `docker run --gpus all`。若 Runner 配成 `docker` executor，job 会跑进 `ubuntu:22.04` 辅助容器，里面没有 `docker` 命令，也没有 GPU，典型报错：
+
+```text
+/usr/bin/bash: docker: command not found
+```
+
+在 GPU 服务器上检查 Runner 配置：
+
+```bash
+sudo cat /etc/gitlab-runner/config.toml
+# 或 user-mode：cat ~/.gitlab-runner/config.toml
+```
+
+确认对应 runner 段为：
+
+```toml
+[[runners]]
+  executor = "shell"
+  [runners.custom_build_dir]
+```
+
+若当前是 `executor = "docker"`，需要改回 `shell` 并重启 runner：
+
+```bash
+sudo gitlab-runner restart
+# 或：gitlab-runner restart
+```
 
 - [ ] Pipeline 中出现 `quality:*` job 和 `run_training`。
 - [ ] 手动点击 `run_training` 的 Play 能成功，或 commit message 含 `[run train]` 能自动触发。

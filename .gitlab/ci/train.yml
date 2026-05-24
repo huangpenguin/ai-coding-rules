@@ -27,7 +27,15 @@ run_training:
   script:
     - |
       set -euo pipefail
-      # 以下脚本在 GPU 服务器的 Runner 上直接执行，不是在 GitLab 云容器里
+      # 以下脚本必须在 shell executor 下跑在 GPU 宿主机上。
+      # 若 Runner 使用 docker executor，job 会进 ubuntu 容器，没有 docker / GPU，必然失败。
+
+      if ! command -v docker >/dev/null 2>&1; then
+        echo "ERROR: docker not found in this job environment." >&2
+        echo "Configure the gpu-server Runner with executor=shell on the GPU host, not executor=docker." >&2
+        echo "See docs/MLOPS-CHECKLIST.zh-CN.md section 5." >&2
+        exit 1
+      fi
 
       CONTAINER_NAME="train-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_REF_SLUG}"
       RUN_DIR="${MLOPS_RUN_ROOT}/${CI_PROJECT_PATH_SLUG}/${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
