@@ -44,6 +44,9 @@ wandb/
 mlruns/
 runs/
 logs/
+lightning_logs/
+tensorboard/
+*.log
 
 # Data and model artifacts
 data/

@@ -1,0 +1,37 @@
+{
+  "name": "AI MLOps GPU Template",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile"
+  },
+  "workspaceFolder": "/workspace",
+  "remoteUser": "root",
+  "runArgs": [
+    "--gpus",
+    "all",
+    "--shm-size",
+    "16g"
+  ],
+  "mounts": [
+    "source=/mnt/nfs_data,target=/data,type=bind"
+  ],
+  "containerEnv": {
+    "PYTHONUNBUFFERED": "1",
+    "UV_LINK_MODE": "copy",
+    "DATA_DIR": "/data"
+  },
+  "postCreateCommand": "if [ -f pyproject.toml ]; then uv sync --dev; fi",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "charliermarsh.ruff"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/conda/bin/python",
+        "python.terminal.activateEnvironment": false
+      }
+    }
+  }
+}

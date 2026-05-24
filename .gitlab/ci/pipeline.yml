@@ -1,0 +1,37 @@
+stages:
+  - quality
+  - deploy
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+
+include:
+  - local: ".gitlab/ci/train.yml"
+
+variables:
+  UV_LINK_MODE: copy
+
+quality:
+  stage: quality
+  image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+  cache:
+    key:
+      files:
+        - pyproject.toml
+    paths:
+      - .venv/
+  script:
+    - |
+      if [ ! -f pyproject.toml ]; then
+        echo "No pyproject.toml found; skipping Python quality checks."
+        exit 0
+      fi
+    - uv sync --dev
+    - uv run ruff check .
+    - uv run ruff format --check .
+    - uv run pyright

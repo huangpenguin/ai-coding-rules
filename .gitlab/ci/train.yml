@@ -1,0 +1,86 @@
+run_training:
+  stage: deploy
+  tags:
+    - gpu
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[run train\]/'
+      when: always
+    - when: manual
+      allow_failure: true
+  variables:
+    BUILD_MLOPS_IMAGE: "true"
+    MLOPS_DOCKER_IMAGE: ""
+    MLOPS_RUN_ROOT: "$HOME/mlops-runs"
+    TRAIN_COMMAND: "python train.py"
+    DATA_MOUNT_SOURCE: "/mnt/nfs_data"
+    DATA_MOUNT_TARGET: "/data"
+  script:
+    - |
+      set -euo pipefail
+
+      CONTAINER_NAME="train-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_REF_SLUG}"
+      RUN_DIR="${MLOPS_RUN_ROOT}/${CI_PROJECT_PATH_SLUG}/${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+      if [[ -n "${MLOPS_DOCKER_IMAGE:-}" ]]; then
+        IMAGE="${MLOPS_DOCKER_IMAGE}"
+      elif [[ "${BUILD_MLOPS_IMAGE}" == "true" ]]; then
+        IMAGE="mlops-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_SHORT_SHA}"
+      else
+        IMAGE="pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel"
+      fi
+
+      echo "Preparing durable run directory: ${RUN_DIR}"
+      mkdir -p "${RUN_DIR}"
+      tar \
+        --exclude=.git \
+        --exclude=.venv \
+        --exclude=__pycache__ \
+        --exclude=.ruff_cache \
+        --exclude=.pytest_cache \
+        --exclude=.pyright \
+        -C "${CI_PROJECT_DIR}" \
+        -cf - . | tar -C "${RUN_DIR}" -xf -
+
+      if [[ "${BUILD_MLOPS_IMAGE}" == "true" ]]; then
+        echo "Building Docker image from ${RUN_DIR}/Dockerfile: ${IMAGE}"
+        docker build -t "${IMAGE}" -f "${RUN_DIR}/Dockerfile" "${RUN_DIR}"
+      fi
+
+      echo "Stopping previous container for this branch, if any: ${CONTAINER_NAME}"
+      docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+      docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+
+      docker_args=(
+        run
+        -d
+        --gpus all
+        --name "${CONTAINER_NAME}"
+        --shm-size 16g
+        --user "$(id -u):$(id -g)"
+        --workdir /workspace
+        -e HOME=/tmp
+        -e PYTHONUNBUFFERED=1
+        -e UV_LINK_MODE=copy
+        -v "${RUN_DIR}:/workspace"
+      )
+
+      if [[ -n "${DATA_MOUNT_SOURCE:-}" && -d "${DATA_MOUNT_SOURCE}" ]]; then
+        docker_args+=(-v "${DATA_MOUNT_SOURCE}:${DATA_MOUNT_TARGET:-/data}")
+      else
+        echo "DATA_MOUNT_SOURCE is unset or missing; starting without dataset mount."
+      fi
+
+      if [[ -n "${WANDB_API_KEY:-}" ]]; then
+        docker_args+=(-e WANDB_API_KEY)
+      fi
+
+      if [[ -n "${MLFLOW_TRACKING_URI:-}" ]]; then
+        docker_args+=(-e MLFLOW_TRACKING_URI)
+      fi
+
+      docker_args+=("${IMAGE}" bash -lc "${TRAIN_COMMAND}")
+
+      echo "Starting training container from image: ${IMAGE}"
+      docker "${docker_args[@]}"
+      echo "Training container started: ${CONTAINER_NAME}"
+      echo "Run directory: ${RUN_DIR}"
+      echo "Follow logs with: docker logs -f ${CONTAINER_NAME}"

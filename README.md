@@ -15,6 +15,8 @@ This repository is intentionally small. It works as a template that you clone on
 - Legacy Cursor compatibility through `.cursorrules`
 - Ruff, Pyright, and pre-commit configuration
 - GitHub PR template and CI workflow
+- GitLab CI templates for quality checks and GPU Runner training dispatch
+- Docker and devcontainer templates for reproducible GPU development
 - `inject-ai.sh`, a script that copies the template into the current project
 - `install.sh`, a one-time bootstrap script that clones the template and configures the `init-ai` alias
 
@@ -85,7 +87,7 @@ init-ai
 What happens:
 
 - AI rules are copied into `.cursor/rules/`, `CLAUDE.md`, and `.cursorrules`.
-- Ruff, Pyright, pre-commit, GitHub CI, and PR templates are copied in.
+- Ruff, Pyright, pre-commit, GitHub/GitLab CI, Docker, devcontainer, and PR templates are copied in.
 - Because `pyproject.toml` exists, `uv add --dev ruff pyright pre-commit` is run.
 - Because `.git` exists, `uv run pre-commit install` is run.
 
@@ -127,7 +129,7 @@ Apply the update only after the preview looks right:
 init-ai --update --apply
 ```
 
-Update mode preserves `MEMORY.md`, `.cursor/project-context/`, and `.cursor/lessons-learned/`. It updates managed template files such as `.cursor/rules/*.mdc`, `CLAUDE.md`, `.cursorrules`, Ruff, Pyright, pre-commit, and GitHub workflow files.
+Update mode preserves `MEMORY.md`, `.cursor/project-context/`, `.cursor/lessons-learned/`, and an existing project `train.py`. It updates managed template files such as `.cursor/rules/*.mdc`, `CLAUDE.md`, `.cursorrules`, Ruff, Pyright, pre-commit, GitHub/GitLab workflow files, Dockerfile, and devcontainer files.
 
 ### Add Rules to a Legacy Project
 
@@ -166,6 +168,68 @@ This is a reinforcement learning project. Apply `.cursor/rules/rl-conventions.md
 
 Non-RL projects can keep the rule file without deleting it; it should stay inactive unless the task becomes RL-related.
 
+### MLOps / GPU Runner Projects
+
+The template includes a minimal GPU training scaffold:
+
+- `Dockerfile`: a PyTorch CUDA development and training image with `uv`.
+- `.devcontainer/devcontainer.json`: a Cursor / VS Code devcontainer that reuses the Dockerfile, exposes GPUs, and mounts `/mnt/nfs_data` to `/data`.
+- `.gitlab-ci.yml`: a thin root entrypoint that includes `.gitlab/ci/pipeline.yml`.
+- `.gitlab/ci/pipeline.yml`: GitLab quality checks.
+- `.gitlab/ci/train.yml`: a manual or commit-message-triggered training job for self-hosted GitLab Runners tagged `gpu`.
+- `train.py`: a smoke test that verifies PyTorch, CUDA visibility, and the data mount.
+
+The training job is conservative by default. It creates a durable run directory under `$HOME/mlops-runs`, copies the checked-out project there, stops any previous container for the same branch, and starts a detached Docker container. Trigger it manually in GitLab, or include `[run train]` in the commit message.
+
+Override these GitLab CI/CD variables per project or per runner:
+
+```bash
+TRAIN_COMMAND="python train.py"
+BUILD_MLOPS_IMAGE="true"
+MLOPS_DOCKER_IMAGE=""
+MLOPS_RUN_ROOT="$HOME/mlops-runs"
+DATA_MOUNT_SOURCE="/mnt/nfs_data"
+DATA_MOUNT_TARGET="/data"
+```
+
+For real projects, change `TRAIN_COMMAND` to your entrypoint, for example `uv run python -m src.train`. Set `BUILD_MLOPS_IMAGE=false` and `MLOPS_DOCKER_IMAGE=pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel` if you want to skip the project Dockerfile and run directly from a prebuilt image.
+
+Store secrets such as `WANDB_API_KEY` and `MLFLOW_TRACKING_URI` in GitLab CI/CD variables. Do not commit credentials to this repository, Dockerfiles, `.env` files, or project memory files.
+
+#### GitLab Runner Setup
+
+On each GPU server, install Docker, the NVIDIA Container Toolkit, and a self-hosted GitLab Runner using the shell executor. Register the runner with the `gpu` tag, then verify the host can run GPU containers:
+
+```bash
+docker run --rm --gpus all nvidia/cuda:12.1.1-base-ubuntu22.04 nvidia-smi
+```
+
+The runner user must be able to run Docker and read the dataset mount:
+
+```bash
+groups
+ls /mnt/nfs_data
+```
+
+For multiple GPU servers, prefer specific tags such as `gpu-a100-1` or `gpu-4090-1` and update `.gitlab/ci/train.yml` in the target project. If all runners share the same `gpu` tag, GitLab will schedule each training job on one available runner, not all runners.
+
+#### Devcontainer Setup
+
+Use the devcontainer when you want interactive development inside the same Docker environment used by the training runner. A typical flow is:
+
+```bash
+ssh gpu-server
+git clone <your-project>
+cd <your-project>
+init-ai
+```
+
+Then open the remote folder in Cursor and choose **Reopen in Container**. Before doing that, make sure `/mnt/nfs_data` exists on the server, or edit `.devcontainer/devcontainer.json` in the target project to point to the correct dataset path.
+
+Install the **Remote - SSH** and **Dev Containers** extensions in Cursor before using devcontainers.
+
+For a step-by-step acceptance flow, see [MLOPS-CHECKLIST.md](MLOPS-CHECKLIST.md).
+
 ## Configuration
 
 The main configurable parts are:
@@ -179,6 +243,9 @@ The main configurable parts are:
 - `pyrightconfig.json`: Pyright type-checking rules.
 - `.pre-commit-config.yaml`: local commit-time checks.
 - `.github/workflows/ci.yml`: GitHub CI checks.
+- `.gitlab-ci.yml`, `.gitlab/ci/pipeline.yml`, and `.gitlab/ci/train.yml`: GitLab quality checks and GPU Runner training dispatch.
+- `MLOPS-CHECKLIST.md`: first-time acceptance checklist for Docker, GitLab Runner, and devcontainer setup.
+- `Dockerfile` and `.devcontainer/devcontainer.json`: shared GPU development and training environment.
 - `.github/PULL_REQUEST_TEMPLATE.md`: PR description template.
 
 The injection script assumes it is run from the target project root. Use plain `init-ai` for first-time setup, and use `init-ai --update --dry-run` before applying updates in an existing project.

@@ -193,8 +193,16 @@ install_private_directory "${SOURCE_DIR}/.cursor/lessons-learned/README.md" "${T
 copy_if_missing "${SOURCE_DIR}/MEMORY-TEMPLATE.md" "${TARGET_DIR}/MEMORY.md"
 
 echo
-echo "Syncing GitHub PR template and CI workflow..."
+echo "Syncing GitHub and GitLab CI templates..."
 copy_managed_tree "${SOURCE_DIR}/.github" "${TARGET_DIR}/.github"
+copy_managed_tree "${SOURCE_DIR}/.gitlab" "${TARGET_DIR}/.gitlab"
+copy_managed_file "${SOURCE_DIR}/.gitlab-ci.yml" "${TARGET_DIR}/.gitlab-ci.yml"
+
+echo
+echo "Syncing Docker / MLOps template files..."
+copy_managed_file "${SOURCE_DIR}/Dockerfile" "${TARGET_DIR}/Dockerfile"
+copy_managed_tree "${SOURCE_DIR}/.devcontainer" "${TARGET_DIR}/.devcontainer"
+copy_if_missing "${SOURCE_DIR}/train.py" "${TARGET_DIR}/train.py"
 
 echo
 echo "Syncing Ruff / Pyright / pre-commit configuration..."
