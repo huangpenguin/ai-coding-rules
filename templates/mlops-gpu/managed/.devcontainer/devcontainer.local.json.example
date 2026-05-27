@@ -1,0 +1,6 @@
+{
+  "initializeCommand": "mkdir -p \"${localEnv:HOME}/.local/share/ai-coding-rules-data\"",
+  "mounts": [
+    "source=${localEnv:HOME}/.local/share/ai-coding-rules-data,target=/data,type=bind"
+  ]
+}

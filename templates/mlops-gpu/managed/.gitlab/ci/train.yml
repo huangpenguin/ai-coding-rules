@@ -41,7 +41,7 @@ run_training:
     MLOPS_DOCKER_IMAGE: "" # 非空时跳过 build，直接使用指定镜像
     MLOPS_RUN_ROOT: "$HOME/mlops-runs" # 持久运行目录，位于 Runner 所在主机
     TRAIN_COMMAND: "python train.py" # 容器内执行的命令；真实项目可改为 uv run python -m src.train
-    DATA_MOUNT_SOURCE: "/mnt/nfs_data" # 宿主机数据路径
+    DATA_MOUNT_SOURCE: "/mnt/data" # 宿主机数据路径
     DATA_MOUNT_TARGET: "/data" # 容器内挂载点
   script:
     - |
