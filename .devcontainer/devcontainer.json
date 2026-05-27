@@ -5,7 +5,8 @@
     "dockerfile": "../Dockerfile"
   },
   "workspaceFolder": "/workspace",
-  "remoteUser": "root",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
   "runArgs": [
     "--gpus",
     "all",
