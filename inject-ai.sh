@@ -7,35 +7,123 @@ MODE="init"
 DRY_RUN=false
 APPLY=true
 UPDATE_ACTION_SET=false
+ACTION="init"
+PACK_ARG=""
+PROFILE_ARG=""
+PACKS=()
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
-  init-ai
-  init-ai --update --dry-run
-  init-ai --update --apply
+  init-ai [--update] [--dry-run|--apply]
+  init-ai add <pack> [--update] [--dry-run|--apply]
+  init-ai profile <profile> [--update] [--dry-run|--apply]
+
+Packs:
+  core              Cursor / Claude rules and project memory (default)
+  python-quality    Ruff, Pyright, pre-commit, and .gitignore
+  ci-quality        GitHub Actions and GitLab quality CI
+  mlops-gpu         Docker, devcontainer, GitLab GPU training, and smoke test
+
+Profiles:
+  research-gpu      core + python-quality + ci-quality + mlops-gpu
 
 Modes:
-  init                 Initialize rules in the current project.
-  --update --dry-run   Preview safe updates without writing files.
-  --update --apply     Apply safe updates to managed template files.
-EOF
+  init              Initialize selected packs in the current project.
+  --update          Update selected managed template files.
+  --dry-run         Preview changes without writing files.
+  --apply           Apply changes. Required when --update is used.
+USAGE
+}
+
+add_pack_once() {
+  local pack="$1"
+  local existing
+
+  for existing in "${PACKS[@]:-}"; do
+    if [[ "${existing}" == "${pack}" ]]; then
+      return
+    fi
+  done
+
+  PACKS+=("${pack}")
+}
+
+select_pack() {
+  local pack="$1"
+
+  case "${pack}" in
+    core|python-quality|ci-quality)
+      add_pack_once "${pack}"
+      ;;
+    mlops-gpu)
+      echo "Pack dependency: mlops-gpu also applies ci-quality."
+      add_pack_once "ci-quality"
+      add_pack_once "mlops-gpu"
+      ;;
+    *)
+      echo "Unknown pack: ${pack}" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+select_profile() {
+  local profile="$1"
+
+  case "${profile}" in
+    research-gpu)
+      select_pack core
+      select_pack python-quality
+      select_pack ci-quality
+      select_pack mlops-gpu
+      ;;
+    *)
+      echo "Unknown profile: ${profile}" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    add)
+      ACTION="add"
+      if [[ $# -lt 2 ]]; then
+        echo "Please specify a pack after 'add'." >&2
+        usage >&2
+        exit 1
+      fi
+      PACK_ARG="$2"
+      shift 2
+      ;;
+    profile)
+      ACTION="profile"
+      if [[ $# -lt 2 ]]; then
+        echo "Please specify a profile after 'profile'." >&2
+        usage >&2
+        exit 1
+      fi
+      PROFILE_ARG="$2"
+      shift 2
+      ;;
     --update)
       MODE="update"
+      shift
       ;;
     --dry-run)
       DRY_RUN=true
       APPLY=false
       UPDATE_ACTION_SET=true
+      shift
       ;;
     --apply)
       DRY_RUN=false
       APPLY=true
       UPDATE_ACTION_SET=true
+      shift
       ;;
     -h|--help)
       usage
@@ -47,7 +135,6 @@ while [[ $# -gt 0 ]]; do
       exit 1
       ;;
   esac
-  shift
 done
 
 if [[ "${MODE}" == "update" && "${UPDATE_ACTION_SET}" == false ]]; then
@@ -55,15 +142,28 @@ if [[ "${MODE}" == "update" && "${UPDATE_ACTION_SET}" == false ]]; then
   exit 1
 fi
 
+case "${ACTION}" in
+  init)
+    select_pack core
+    ;;
+  add)
+    select_pack "${PACK_ARG}"
+    ;;
+  profile)
+    select_profile "${PROFILE_ARG}"
+    ;;
+esac
+
 print_header() {
   if [[ "${MODE}" == "update" ]]; then
-    echo "Safely updating AI engineering rules for the current project..."
+    echo "Safely updating selected AI template packs..."
   else
-    echo "Initializing AI engineering rules for the current project..."
+    echo "Initializing selected AI template packs..."
   fi
 
   echo "Template source: ${SOURCE_DIR}"
   echo "Target project: ${TARGET_DIR}"
+  echo "Selected packs: ${PACKS[*]}"
 
   if [[ "${DRY_RUN}" == true ]]; then
     echo "Mode: dry-run. Preview only; no files will be written."
@@ -127,35 +227,65 @@ copy_if_missing() {
   cp -f "${source_file}" "${target_file}"
 }
 
-copy_managed_tree() {
+copy_tree_files() {
   local source_root="$1"
   local target_root="$2"
+  local copy_mode="$3"
   local source_file
   local relative_path
 
+  if [[ ! -d "${source_root}" ]]; then
+    return
+  fi
+
   while IFS= read -r -d '' source_file; do
     relative_path="${source_file#${source_root}/}"
-    copy_managed_file "${source_file}" "${target_root}/${relative_path}"
+
+    case "${relative_path}" in
+      .ruff_cache/*|__pycache__/*|*.pyc|*.pyo)
+        continue
+        ;;
+    esac
+
+    if [[ "${copy_mode}" == "managed" ]]; then
+      copy_managed_file "${source_file}" "${target_root}/${relative_path}"
+    else
+      copy_if_missing "${source_file}" "${target_root}/${relative_path}"
+    fi
   done < <(find "${source_root}" -type f -print0 | sort -z)
 }
 
-install_private_directory() {
-  local source_readme="$1"
-  local target_dir="$2"
+apply_pack() {
+  local pack="$1"
+  local pack_dir="${SOURCE_DIR}/templates/${pack}"
 
-  if [[ ! -d "${target_dir}" ]]; then
-    printf '%-8s %s/\n' "ADD" "${target_dir#${TARGET_DIR}/}"
-    if [[ "${DRY_RUN}" == false ]]; then
-      mkdir -p "${target_dir}"
-    fi
-  else
-    printf '%-8s %s/\n' "PRESERVE" "${target_dir#${TARGET_DIR}/}"
+  if [[ ! -d "${pack_dir}" ]]; then
+    echo "Pack directory not found: ${pack_dir}" >&2
+    exit 1
   fi
 
-  copy_if_missing "${source_readme}" "${target_dir}/README.md"
+  echo
+  echo "Applying pack: ${pack}"
+  copy_tree_files "${pack_dir}/managed" "${TARGET_DIR}" managed
+  copy_tree_files "${pack_dir}/preserve" "${TARGET_DIR}" preserve
 }
 
-install_dev_tools() {
+install_python_quality_tools() {
+  local selected=false
+  local pack
+
+  for pack in "${PACKS[@]}"; do
+    if [[ "${pack}" == "python-quality" ]]; then
+      selected=true
+      break
+    fi
+  done
+
+  if [[ "${selected}" == false ]]; then
+    return
+  fi
+
+  echo
   if [[ "${DRY_RUN}" == true ]]; then
     printf '%-8s %s\n' "SKIP" "uv add --dev ruff pyright pre-commit (dry-run)"
     printf '%-8s %s\n' "SKIP" "uv run pre-commit install (dry-run)"
@@ -180,45 +310,16 @@ install_dev_tools() {
 
 print_header
 
-echo
-echo "Syncing Cursor / Claude AI rules..."
-copy_managed_tree "${SOURCE_DIR}/.cursor/rules" "${TARGET_DIR}/.cursor/rules"
-copy_managed_file "${SOURCE_DIR}/CLAUDE.md" "${TARGET_DIR}/CLAUDE.md"
-copy_managed_file "${SOURCE_DIR}/.cursorrules" "${TARGET_DIR}/.cursorrules"
+for pack in "${PACKS[@]}"; do
+  apply_pack "${pack}"
+done
 
-echo
-echo "Initializing project-private context directories..."
-install_private_directory "${SOURCE_DIR}/.cursor/project-context/README.md" "${TARGET_DIR}/.cursor/project-context"
-install_private_directory "${SOURCE_DIR}/.cursor/lessons-learned/README.md" "${TARGET_DIR}/.cursor/lessons-learned"
-copy_if_missing "${SOURCE_DIR}/MEMORY-TEMPLATE.md" "${TARGET_DIR}/MEMORY.md"
-
-echo
-echo "Syncing GitHub and GitLab CI templates..."
-copy_managed_tree "${SOURCE_DIR}/.github" "${TARGET_DIR}/.github"
-copy_managed_tree "${SOURCE_DIR}/.gitlab" "${TARGET_DIR}/.gitlab"
-copy_managed_file "${SOURCE_DIR}/.gitlab-ci.yml" "${TARGET_DIR}/.gitlab-ci.yml"
-
-echo
-echo "Syncing Docker / MLOps template files..."
-copy_managed_file "${SOURCE_DIR}/Dockerfile" "${TARGET_DIR}/Dockerfile"
-copy_managed_tree "${SOURCE_DIR}/.devcontainer" "${TARGET_DIR}/.devcontainer"
-copy_managed_tree "${SOURCE_DIR}/docs" "${TARGET_DIR}/docs"
-copy_if_missing "${SOURCE_DIR}/train.py" "${TARGET_DIR}/train.py"
-
-echo
-echo "Syncing Ruff / Pyright / pre-commit configuration..."
-copy_managed_file "${SOURCE_DIR}/ruff.toml" "${TARGET_DIR}/ruff.toml"
-copy_managed_file "${SOURCE_DIR}/pyrightconfig.json" "${TARGET_DIR}/pyrightconfig.json"
-copy_managed_file "${SOURCE_DIR}/.pre-commit-config.yaml" "${TARGET_DIR}/.pre-commit-config.yaml"
-copy_managed_file "${SOURCE_DIR}/.gitignore" "${TARGET_DIR}/.gitignore"
-
-echo
-install_dev_tools
+install_python_quality_tools
 
 if [[ "${DRY_RUN}" == true ]]; then
   echo
-  echo "Dry-run complete. Use init-ai --update --apply to apply the changes above."
+  echo "Dry-run complete. Use --apply to apply the changes above."
 else
   echo
-  echo "AI engineering rules completed."
+  echo "AI template packs completed."
 fi
