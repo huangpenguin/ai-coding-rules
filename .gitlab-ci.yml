@@ -1,9 +1,8 @@
 # 根 CI 编排文件：定义全局 pipeline 行为，具体 job 拆到 .gitlab/ci/ 下。
 # GitLab 会在 push / MR 时读取本文件并创建 pipeline。
 #
-# 本仓库两类 job 对比（初学 CI 时容易混淆「两层 Docker」，见各 include 文件开头）：
-#   quality.yml  → GitLab 共享 Runner + image（第 1 层：CI 临时容器）
-#   train.yml    → gpu-server 自建 Runner + shell executor + 脚本里 docker build/run（第 2 层：训练容器）
+# 本仓库默认只运行 quality CI。GPU 训练调度属于 mlops-gpu pack，
+# 注入到目标项目后会由该 pack 的 .gitlab-ci.yml include train job。
 
 default:
   interruptible: true # MR 有新提交时，取消旧的 pipeline，节省 Runner 资源
@@ -21,7 +20,6 @@ workflow:
 
 stages:
   - quality # 代码质量检查（Ruff / Pyright）
-  - deploy # GPU 训练调度（self-hosted Runner）
 
 variables:
   FF_USE_FASTZIP: "true" # 加速 GitLab artifact / cache 传输
@@ -29,4 +27,3 @@ variables:
 
 include:
   - local: .gitlab/ci/quality.yml
-  - local: .gitlab/ci/train.yml

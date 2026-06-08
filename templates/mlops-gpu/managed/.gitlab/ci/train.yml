@@ -17,7 +17,7 @@
 #
 #   GitLab Play → shell 在宿主机跑 script → docker build/run 起训练容器
 #
-# 注册 Runner 时 tag 须与下方 tags 一致；详见 docs/MLOPS-CHECKLIST.zh-CN.md 第 5 节。
+# 注册 Runner 时 tag 须与下方 tags 一致；详见 docs/use-cases/gpu-runner.zh-CN.md。
 # 触发：GitLab 网页 manual Play，或 commit message 含 [run train]。
 # =============================================================================
 
@@ -52,7 +52,7 @@ run_training:
       if ! command -v docker >/dev/null 2>&1; then
         echo "ERROR: docker not found in this job environment." >&2
         echo "Configure the gpu-server Runner with executor=shell on the GPU host, not executor=docker." >&2
-        echo "See docs/MLOPS-CHECKLIST.zh-CN.md section 5." >&2
+        echo "See docs/use-cases/gpu-runner.zh-CN.md." >&2
         exit 1
       fi
 
@@ -65,7 +65,7 @@ run_training:
       elif [[ "${BUILD_MLOPS_IMAGE}" == "true" ]]; then
         IMAGE="mlops-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_SHORT_SHA}"
       else
-        IMAGE="pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel"
+        IMAGE="pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
       fi
 
       # 复制 checkout 到持久目录，避免 GitLab 清理 workspace 后训练文件丢失
