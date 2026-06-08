@@ -1,6 +1,6 @@
 When working in this repository, follow these tools and conventions strictly.
 
-CRITICAL: Before major architecture, debugging, or planning work, read `MEMORY.md` if it exists, and read `.cursor/project-context/` and `.cursor/lessons-learned/` when relevant. After major decisions, deep bug fixes, or repeated-failure resolutions, proactively suggest a concise memory update.
+CRITICAL: Before major architecture, debugging, or planning work, read `.cursor/project-context/` and `.cursor/lessons-learned/` when relevant. Also read root `MEMORY.md` only if it exists in a target project. Store stable project decisions in `.cursor/project-context/` and reusable failure lessons in `.cursor/lessons-learned/`.
 
 # Global AI Coding Rules
 

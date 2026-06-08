@@ -15,4 +15,6 @@ Each note should include only:
 - Fix
 - Prevention
 
+Do not store general architecture decisions here. Put stable project context and decisions in `.cursor/project-context/`.
+
 Keep notes concise and searchable.
