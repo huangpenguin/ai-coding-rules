@@ -4,19 +4,14 @@
     "context": "..",
     "dockerfile": "../Dockerfile"
   },
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
   "workspaceFolder": "/workspace",
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
-  "initializeCommand": "ls /mnt/data >/dev/null",
   "runArgs": [
     "--gpus",
     "all",
     "--shm-size",
     "16g"
-  ],
-  "mounts": [
-    "source=/mnt/data,target=/data,type=bind"
   ],
   "containerEnv": {
     "PYTHONUNBUFFERED": "1",

@@ -1,6 +1,40 @@
 {
+  // This file is an example only. Dev Containers does not load
+  // devcontainer.local.json.example automatically.
+  //
+  // How to use:
+  // 1. Open .devcontainer/devcontainer.json in your target project.
+  // 2. Copy the fields you need from this file into devcontainer.json.
+  // 3. Rebuild the container.
+  //
+  // Docker bind mounts use paths on the machine that runs Docker.
+  // If Docker runs on gpu01, "source" must be a path visible on gpu01.
+  // Do not put the NFS server export path here, such as:
+  //   192.168.3.14:/mnt/storage/data
+
+  // Option A: local fallback directory, works on almost any machine.
+  // Use this when there is no shared dataset mount.
   "initializeCommand": "mkdir -p \"${localEnv:HOME}/.local/share/ai-coding-rules-data\"",
   "mounts": [
     "source=${localEnv:HOME}/.local/share/ai-coding-rules-data,target=/data,type=bind"
   ]
+
+  // Option B: autofs NFS on gpu01.
+  // If /etc/auto.nfs contains:
+  //   data -fstype=nfs,... 192.168.3.14:/mnt/storage/data
+  // and auto.master maps it under /mnt, then the Docker host path is /mnt/data.
+  //
+  // Replace Option A above with:
+  //
+  // "initializeCommand": "ls /mnt/data >/dev/null",
+  // "mounts": [
+  //   "source=/mnt/data,target=/data,type=bind"
+  // ]
+
+  // Option C: manually mounted NFS or local disk.
+  // Replace /path/on/gpu-host with the actual directory on the Docker host:
+  //
+  // "mounts": [
+  //   "source=/path/on/gpu-host,target=/data,type=bind"
+  // ]
 }
