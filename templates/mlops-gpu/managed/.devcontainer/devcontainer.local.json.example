@@ -4,8 +4,10 @@
   //
   // How to use:
   // 1. Open .devcontainer/devcontainer.json in your target project.
-  // 2. Copy the fields you need from this file into devcontainer.json.
-  // 3. Rebuild the container.
+  // 2. Keep the baseline fields already in devcontainer.json:
+  //    workspaceMount + workspaceFolder (/workspace), remoteUser, updateRemoteUserUID.
+  // 3. Copy only the data-mount fields you need from this file into devcontainer.json.
+  // 4. Rebuild the container.
   //
   // Docker bind mounts use paths on the machine that runs Docker.
   // If Docker runs on gpu01, "source" must be a path visible on gpu01.

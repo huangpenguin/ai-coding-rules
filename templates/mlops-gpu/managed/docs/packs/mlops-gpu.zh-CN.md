@@ -27,10 +27,16 @@ init-ai add mlops-gpu --apply
 - executor: `shell`
 - GPU 宿主机已安装 Docker + NVIDIA Container Toolkit
 
+Dev Container 基线配置（模板固定包含，inject 后不要删）：
+
+- `workspaceMount` + `workspaceFolder`：项目挂载到容器 `/workspace`，与 Dockerfile `WORKDIR` 一致。
+- `remoteUser` + `updateRemoteUserUID`：避免 bind mount 后文件属主不匹配。
+- `containerEnv.DATA_DIR=/data`：与训练脚本约定一致；镜像内会创建空的 `/data`。
+
 数据挂载默认是可选的：
 
-- devcontainer 默认不绑定宿主机数据目录，镜像内会创建空的 `/data`。
-- 如果需要挂载数据，参考 `.devcontainer/devcontainer.local.json.example`，把适合你机器的字段复制到 `.devcontainer/devcontainer.json`。
+- devcontainer 默认不绑定宿主机数据目录。
+- 如果文档或 `DATA_DIR` 需要真实数据，参考 `.devcontainer/devcontainer.local.json.example`，把 `mounts` / `initializeCommand` 复制到 `.devcontainer/devcontainer.json`。
 - GitLab CI 默认 `DATA_MOUNT_SOURCE=""`，真实训练时在 GitLab CI/CD Variables 中设置 GPU 宿主机路径，例如 `/mnt/data` 或 `/mnt/nfs_data`。
 
 更多步骤见 [Docker quickstart](../docker/quickstart.zh-CN.md)。
