@@ -47,13 +47,22 @@ init-ai add mlops-gpu --apply
 
 ## Docs
 
-- [Documentation index](docs/README.md)
-- [Core pack](docs/packs/core.zh-CN.md)
-- [Python quality pack](docs/packs/python-quality.zh-CN.md)
-- [CI quality pack](docs/packs/ci-quality.zh-CN.md)
-- [MLOps GPU pack](docs/packs/mlops-gpu.zh-CN.md)
-- [Docker quickstart](docs/docker/quickstart.zh-CN.md)
-- [BasicSR first-stage finetune](docs/use-cases/basicsr-finetune.zh-CN.md)
+- [Documentation index](docs/README.md) — links to canonical pack docs under `templates/`
+- [BasicSR first-stage finetune](docs/use-cases/basicsr-finetune.zh-CN.md) — template-repo guide only
+
+## Repository Layout
+
+This repo is a **template distributor**, not a typical application project.
+
+| Path | Role |
+|------|------|
+| `inject-ai.sh`, `install.sh` | Install and inject entrypoints |
+| `templates/<pack>/` | **Canonical inject source** — edit here for target projects |
+| `docs/` | Index + guides that stay in this repo only |
+| `.cursorrules`, `CLAUDE.md`, `.cursor/` | Maintainer dogfooding for this repo |
+| `pyproject.toml`, `ruff.toml`, `.gitlab-ci.yml`, `.github/` | **This repo's own CI** — not injected |
+
+Docker, devcontainer, GPU training, and pack docs belong under `templates/mlops-gpu/`, not at the repository root.
 
 ## Template Repository Maintenance
 

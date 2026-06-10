@@ -15,7 +15,9 @@
 ## Documentation Layout
 
 - Keep root `README.md` / `README.zh-CN.md` as entry points.
-- Keep operational docs under `docs/`.
+- **`templates/<pack>/managed/docs/`** is the canonical source for pack docs; `init-ai` copies them into target projects.
+- Root `docs/README.md` is an index only, plus guides that are not injected (e.g. BasicSR finetune).
+- Do not duplicate pack docs under root `docs/packs/` or `docs/docker/`.
 - Keep stable architecture and workflow decisions in `.cursor/project-context/`.
 - Keep reusable bug or failure lessons in `.cursor/lessons-learned/`.
 

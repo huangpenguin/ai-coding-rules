@@ -47,13 +47,22 @@ init-ai add mlops-gpu --apply
 
 ## 文档入口
 
-- [文档索引](docs/README.md)
-- [Core pack](docs/packs/core.zh-CN.md)
-- [Python quality pack](docs/packs/python-quality.zh-CN.md)
-- [CI quality pack](docs/packs/ci-quality.zh-CN.md)
-- [MLOps GPU pack](docs/packs/mlops-gpu.zh-CN.md)
-- [Docker quickstart](docs/docker/quickstart.zh-CN.md)
-- [BasicSR 第一阶段微调](docs/use-cases/basicsr-finetune.zh-CN.md)
+- [文档索引](docs/README.md) — 指向 `templates/` 下的 canonical pack 文档
+- [BasicSR 第一阶段微调](docs/use-cases/basicsr-finetune.zh-CN.md) — 仅本模板仓库说明，不会 inject
+
+## 仓库结构
+
+本仓库是 **模板分发器**，不是普通应用项目。
+
+| 路径 | 作用 |
+|------|------|
+| `inject-ai.sh`、`install.sh` | 安装与 inject 入口 |
+| `templates/<pack>/` | **inject 唯一来源** — 改 pack 内容在这里 |
+| `docs/` | 索引 + 仅留在本仓库的指南 |
+| `.cursorrules`、`CLAUDE.md`、`.cursor/` | 维护者在本仓库的 dogfooding |
+| `pyproject.toml`、`ruff.toml`、`.gitlab-ci.yml`、`.github/` | **本仓库自身 CI**，不会 inject |
+
+Docker、devcontainer、GPU 训练与 pack 文档应放在 `templates/mlops-gpu/`，不要放在仓库根目录。
 
 ## 维护本模板仓库
 
