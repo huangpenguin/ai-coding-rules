@@ -2,41 +2,47 @@
   // This file is an example only. Dev Containers does not load
   // devcontainer.local.json.example automatically.
   //
-  // How to use:
-  // 1. Open .devcontainer/devcontainer.json in your target project.
-  // 2. Keep the baseline fields already in devcontainer.json:
-  //    workspaceMount + workspaceFolder (/workspace), remoteUser, updateRemoteUserUID.
-  // 3. Copy only the data-mount fields you need from this file into devcontainer.json.
-  // 4. Rebuild the container.
+  // Default workflow (committed devcontainer.json):
+  //   export DATA_MOUNT_SOURCE=/path/on/docker-host
+  //   Rebuild Container
+  //
+  // Use devcontainer.local.json when you prefer a gitignored hardcoded mount
+  // instead of exporting before every Rebuild:
+  //   1. Copy this file to devcontainer.local.json (already gitignored).
+  //   2. Uncomment ONE option below.
+  //   3. Rebuild Container.
   //
   // Docker bind mounts use paths on the machine that runs Docker.
-  // If Docker runs on gpu01, "source" must be a path visible on gpu01.
-  // Do not put the NFS server export path here, such as:
+  // Do not put NFS server export strings here, such as:
   //   192.168.3.14:/mnt/storage/data
 
-  // Option A: local fallback directory, works on almost any machine.
-  // Use this when there is no shared dataset mount.
-  "initializeCommand": "mkdir -p \"${localEnv:HOME}/.local/share/ai-coding-rules-data\"",
-  "mounts": [
-    "source=${localEnv:HOME}/.local/share/ai-coding-rules-data,target=/data,type=bind"
-  ]
+  // Option A (recommended default): keep using host env var DATA_MOUNT_SOURCE.
+  // No devcontainer.local.json needed — see data-mount.env.example and README.md.
 
-  // Option B: autofs NFS on gpu01.
-  // If /etc/auto.nfs contains:
-  //   data -fstype=nfs,... 192.168.3.14:/mnt/storage/data
-  // and auto.master maps it under /mnt, then the Docker host path is /mnt/data.
+  // Option B: hardcoded host path (gitignored via devcontainer.local.json).
   //
-  // Replace Option A above with:
+  // "initializeCommand": "ls /path/on/docker-host >/dev/null && test -d /path/on/docker-host",
+  // "mounts": [
+  //   "source=/path/on/docker-host,target=/data,type=bind"
+  // ]
+
+  // Option C: autofs NFS on gpu01 (host path /mnt/data).
   //
   // "initializeCommand": "ls /mnt/data >/dev/null",
   // "mounts": [
   //   "source=/mnt/data,target=/data,type=bind"
   // ]
 
-  // Option C: manually mounted NFS or local disk.
-  // Replace /path/on/gpu-host with the actual directory on the Docker host:
+  // Option D: local empty fallback for GPU smoke only (no real datasets).
+  //
+  // "initializeCommand": "mkdir -p \"${localEnv:HOME}/.local/share/mlops-empty-data\"",
+  // "mounts": [
+  //   "source=${localEnv:HOME}/.local/share/mlops-empty-data,target=/data,type=bind"
+  // ]
+
+  // Option E: sibling input/ next to the repo (monorepo layout only).
   //
   // "mounts": [
-  //   "source=/path/on/gpu-host,target=/data,type=bind"
+  //   "source=${localWorkspaceFolder}/../input,target=/data,type=bind"
   // ]
 }

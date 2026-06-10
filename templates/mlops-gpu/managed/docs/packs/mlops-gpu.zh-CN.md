@@ -6,9 +6,12 @@
 
 - `Dockerfile`
 - `.devcontainer/devcontainer.json`
-- `.devcontainer/devcontainer.local.json.example`（本地数据挂载示例，需要手动参考，不会自动生效）
+- `.devcontainer/README.md`（Rebuild 前/后操作手册）
+- `.devcontainer/data-mount.env.example`（shell profile 片段，不会自动加载）
+- `.devcontainer/devcontainer.local.json.example`（gitignore 本地挂载备选）
 - `.gitlab/ci/train.yml`
 - `train.py`（仅目标项目不存在时创建）
+- `scripts/data_paths.py`（仅目标项目不存在时创建）
 - Docker / GPU 相关文档
 
 命令：
@@ -27,16 +30,31 @@ init-ai add mlops-gpu --apply
 - executor: `shell`
 - GPU 宿主机已安装 Docker + NVIDIA Container Toolkit
 
-Dev Container 基线配置（模板固定包含，inject 后不要删）：
+## Dev Container 基线（inject 后不要删）
 
-- `workspaceMount` + `workspaceFolder`：项目挂载到容器 `/workspace`，与 Dockerfile `WORKDIR` 一致。
+- `workspaceMount` + `workspaceFolder=/workspace`：与 Dockerfile `WORKDIR` 一致。
 - `remoteUser` + `updateRemoteUserUID`：避免 bind mount 后文件属主不匹配。
-- `containerEnv.DATA_DIR=/data`：与训练脚本约定一致；镜像内会创建空的 `/data`。
+- `mounts`：`${localEnv:DATA_MOUNT_SOURCE}` → `/data`（Rebuild 前在宿主机 export）。
+- `initializeCommand`：校验 `DATA_MOUNT_SOURCE` 存在，并用 `ls` 触发 autofs。
+- `containerEnv.DATA_DIR=/data`：应用代码只读此变量 + 相对路径。
 
-数据挂载默认是可选的：
+## 数据挂载工作流
 
-- devcontainer 默认不绑定宿主机数据目录。
-- 如果文档或 `DATA_DIR` 需要真实数据，参考 `.devcontainer/devcontainer.local.json.example`，把 `mounts` / `initializeCommand` 复制到 `.devcontainer/devcontainer.json`。
-- GitLab CI 默认 `DATA_MOUNT_SOURCE=""`，真实训练时在 GitLab CI/CD Variables 中设置 GPU 宿主机路径，例如 `/mnt/data` 或 `/mnt/nfs_data`。
+1. 宿主机 Rebuild 前：`export DATA_MOUNT_SOURCE=/path/on/docker-host`
+2. IDE：**Rebuild Container**（不是 Reload Window）
+3. 容器内验证：`echo $DATA_DIR && ls /data`
+
+仅 GPU smoke、无真实数据时：
+
+```bash
+export DATA_MOUNT_SOURCE="${HOME}/.local/share/mlops-empty-data"
+mkdir -p "$DATA_MOUNT_SOURCE"
+```
+
+防遗忘：写入 `~/.zshrc`，或使用 gitignore 的 `.devcontainer/devcontainer.local.json`。
+
+详细步骤见 [`.devcontainer/README.md`](../../.devcontainer/README.md) 与 [数据路径环境变量隔离](../use-cases/data-mount-env-isolation.md)。
+
+GitLab CI 使用相同变量名：在 CI/CD Variables 设置 `DATA_MOUNT_SOURCE`（GPU Runner 宿主机路径）。
 
 更多步骤见 [Docker quickstart](../docker/quickstart.zh-CN.md)。

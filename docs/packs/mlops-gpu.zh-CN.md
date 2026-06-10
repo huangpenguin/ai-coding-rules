@@ -5,9 +5,9 @@
 包含：
 
 - `Dockerfile`
-- `.devcontainer/devcontainer.json`
+- `.devcontainer/devcontainer.json`、`.devcontainer/README.md`
 - `.gitlab/ci/train.yml`
-- `train.py`（仅目标项目不存在时创建）
+- `train.py`、`scripts/data_paths.py`（仅目标项目不存在时创建）
 - Docker / GPU 相关文档
 
 命令：
@@ -26,4 +26,9 @@ init-ai add mlops-gpu --apply
 - executor: `shell`
 - GPU 宿主机已安装 Docker + NVIDIA Container Toolkit
 
-更多步骤见 [Docker quickstart](../docker/quickstart.zh-CN.md)。
+Dev Container 使用 `DATA_MOUNT_SOURCE`（宿主机，Rebuild 前 export）→ `/data`（容器），应用读 `DATA_DIR=/data`。
+
+- 操作手册：[`.devcontainer/README.md`](../../templates/mlops-gpu/managed/.devcontainer/README.md)（inject 后在目标项目 `.devcontainer/README.md`）
+- 规格说明：[Data mount env isolation](use-cases/data-mount-env-isolation.md)
+
+更多步骤见 [Docker quickstart](docker/quickstart.zh-CN.md)。

@@ -19,4 +19,5 @@ Supplementary docs for this template. The root README is the quick-start entry p
 ## Use Cases
 
 - [BasicSR finetune](use-cases/basicsr-finetune.zh-CN.md)
+- [Data mount env isolation](use-cases/data-mount-env-isolation.md)
 - [GPU Runner workflow](use-cases/gpu-runner.zh-CN.md)
