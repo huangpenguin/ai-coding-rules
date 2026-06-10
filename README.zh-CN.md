@@ -66,8 +66,18 @@ Docker、devcontainer、GPU 训练与 pack 文档应放在 `templates/mlops-gpu/
 
 ## 维护本模板仓库
 
-本仓库同时在 **GitHub**（`origin`）和 **GitLab**（`gitlab`）维护镜像。在 `main` 上提交后，默认同时推送到两个远端：
+本仓库在 **GitHub** 与 **GitLab** 双端镜像。一次性配置 remotes：
+
+```bash
+git remote add origin git@github.com:huangpenguin/ai-coding-rules.git   # 若已有 origin 则跳过
+git remote add gitlab git@gitlab.com:jil_atr/ai-coding-rules.git        # GitLab 当前 canonical 路径
+git fetch --all
+```
+
+`main` 提交后推送到两边：
 
 ```bash
 git push origin main && git push gitlab main
 ```
+
+本维护者 checkout 上 `main` 默认跟踪 `gitlab/main`；`git fetch --all` 后可从任一侧 pull。

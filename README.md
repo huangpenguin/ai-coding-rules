@@ -66,8 +66,18 @@ Docker, devcontainer, GPU training, and pack docs belong under `templates/mlops-
 
 ## Template Repository Maintenance
 
-This repo is mirrored on **GitHub** (`origin`) and **GitLab** (`gitlab`). After commits on `main`, push to both remotes unless you explicitly want only one remote updated:
+This repo is mirrored on **GitHub** and **GitLab**. Configure both remotes once:
+
+```bash
+git remote add origin git@github.com:huangpenguin/ai-coding-rules.git   # skip if origin exists
+git remote add gitlab git@gitlab.com:jil_atr/ai-coding-rules.git        # GitLab canonical path
+git fetch --all
+```
+
+After commits on `main`, push to both:
 
 ```bash
 git push origin main && git push gitlab main
 ```
+
+`main` tracks `gitlab/main` by default on this maintainer checkout; use `git pull gitlab main` or `git pull origin main` after fetching both.

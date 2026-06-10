@@ -27,3 +27,9 @@
 - Docker executor runs inside a temporary job container and cannot call the host Docker/GPU setup reliably.
 - For GPU Docker defaults, prefer a stable PyTorch CUDA 12.4 image for Ubuntu 24.04 + NVIDIA `570-server` or newer.
 - BasicSR first-stage finetuning should usually use `init-ai` core-only first; add Docker/CI packs after the training command and environment needs are clearer.
+
+## Git Remotes (maintainer checkout)
+
+- `origin` → `git@github.com:huangpenguin/ai-coding-rules.git`
+- `gitlab` → `git@gitlab.com:jil_atr/ai-coding-rules.git` (project moved from `huang.pengbin/ai-coding-rules`)
+- After commits: `git push origin main && git push gitlab main`
