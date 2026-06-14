@@ -20,6 +20,7 @@ workflow:
 
 stages:
   - quality # 代码质量检查（Ruff / Pyright）
+  - gpu # 手动 GPU Runner 诊断；只应由 linux,shell GPU Runner 执行
 
 variables:
   FF_USE_FASTZIP: "true" # 加速 GitLab artifact / cache 传输
@@ -27,3 +28,4 @@ variables:
 
 include:
   - local: .gitlab/ci/quality.yml
+  - local: .gitlab/ci/gpu-runner.yml

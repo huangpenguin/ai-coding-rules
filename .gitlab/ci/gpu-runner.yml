@@ -1,0 +1,108 @@
+# =============================================================================
+# gpu-runner.yml — 本模板仓库的 GPU Runner 诊断
+# =============================================================================
+#
+# 这些 job 只用于手动检查自建 GPU shell runner。
+# 它们与 quality.yml 分离；quality job 继续使用默认 Docker/shared runner。
+#
+# 要求：
+# - runner executor: shell
+# - 共享 GPU shell runner tags: linux, shell
+# - 指定服务器 tags: main_gpu 或 huang
+# - 宿主机工具：docker、nvidia-smi、NVIDIA Container Toolkit
+#
+# 不要把 shell/main_gpu/huang 这类 GPU tag 放到 Docker executor runner 上。
+# 旧 Docker runner 建议只保留 tags: linux, docker, ci-basic。
+# =============================================================================
+
+.gpu_manual_rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true
+
+.gpu_shell_preflight:
+  stage: gpu
+  extends: .gpu_manual_rules
+  tags:
+    - linux
+    - shell
+  timeout: 15m
+  needs: []
+  before_script:
+    - |
+      set -euo pipefail
+      echo "Runner: ${CI_RUNNER_DESCRIPTION:-unknown}"
+      echo "Runner tags: ${CI_RUNNER_TAGS:-unknown}"
+
+      if [[ -f /.dockerenv ]]; then
+        echo "ERROR: 当前 job 正在 Docker executor 临时容器中运行。" >&2
+        echo "GPU 诊断必须运行在 GPU 宿主机上的 shell executor。" >&2
+        echo "请从 Docker executor runner 上移除 shell/main_gpu/huang 这类 GPU tag。" >&2
+        exit 1
+      fi
+
+      if ! command -v docker >/dev/null 2>&1; then
+        echo "ERROR: 当前 runner 环境中找不到 docker 命令。" >&2
+        echo "这通常表示 job 没有被派发到 GPU 宿主机 shell runner。" >&2
+        exit 1
+      fi
+
+      if ! docker info >/dev/null 2>&1; then
+        echo "ERROR: docker 已安装，但 runner 用户无法访问 Docker daemon。" >&2
+        echo "请检查 GPU 宿主机上的 docker 用户组和 /var/run/docker.sock 权限。" >&2
+        exit 1
+      fi
+
+      if ! command -v nvidia-smi >/dev/null 2>&1; then
+        echo "ERROR: 找不到 nvidia-smi。该 runner 不是配置好的 GPU 宿主机。" >&2
+        exit 1
+      fi
+
+gpu:runner-doctor:
+  extends: .gpu_shell_preflight
+  script:
+    - |
+      set -euo pipefail
+      echo "== 宿主机环境 =="
+      hostname || true
+      uname -a
+      id
+      pwd
+      echo
+
+      echo "== NVIDIA 宿主机运行时 =="
+      nvidia-smi
+      echo
+
+      echo "== NVIDIA 容器运行时 =="
+      docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
+      echo
+
+      echo "gpu:runner-doctor 通过。"
+
+gpu:pytorch-smoke:
+  extends: .gpu_shell_preflight
+  timeout: 30m
+  script:
+    - |
+      set -euo pipefail
+      docker run --rm --gpus all --shm-size 16g \
+        pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel \
+        python - <<'PY'
+      import torch
+
+      print("torch:", torch.__version__)
+      print("cuda build:", torch.version.cuda)
+      print("cuda available:", torch.cuda.is_available())
+      print("device count:", torch.cuda.device_count())
+      for idx in range(torch.cuda.device_count()):
+          props = torch.cuda.get_device_properties(idx)
+          print(f"gpu[{idx}]: {props.name}, sm_{props.major}{props.minor}, {props.total_memory // (1024 ** 2)} MiB")
+
+      if not torch.cuda.is_available():
+          raise SystemExit("CUDA is not available inside the PyTorch container")
+      PY
