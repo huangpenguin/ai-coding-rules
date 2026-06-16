@@ -26,7 +26,7 @@
   //   "source=/path/on/docker-host,target=/data,type=bind"
   // ]
 
-  // Option C: autofs NFS on gpu01 (host path /mnt/data).
+  // Option C: autofs NFS on main_gpu (host path /mnt/data).
   //
   // "initializeCommand": "ls /mnt/data >/dev/null",
   // "mounts": [

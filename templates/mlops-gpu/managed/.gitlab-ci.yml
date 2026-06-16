@@ -3,7 +3,7 @@
 #
 # 两类 job 对比：
 #   quality.yml  → GitLab 共享 Runner + image（第 1 层：CI 临时容器）
-#   train.yml    → gpu-server 自建 Runner + shell executor + 脚本里 docker build/run（第 2 层：训练容器）
+#   train.yml    → linux,docker,gpu 自建 GPU Runner + Docker executor + GPU job 容器
 
 default:
   interruptible: true

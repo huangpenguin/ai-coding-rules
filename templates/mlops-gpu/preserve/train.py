@@ -18,11 +18,25 @@ def load_torch() -> ModuleType:
         ) from exc
 
 
-def cuda_status(torch_module: ModuleType) -> tuple[bool, str | None]:
+def torch_runtime(torch_module: ModuleType) -> tuple[str, str | None, int | None]:
+    torch_any: Any = cast(Any, torch_module)
+    version = str(torch_any.__version__)
+    cuda_value = torch_any.version.cuda
+    cuda_version = str(cuda_value) if cuda_value is not None else None
+    cudnn: Any = torch_any.backends.cudnn
+    cudnn_version = cudnn.version()
+    return version, cuda_version, int(cudnn_version) if cudnn_version is not None else None
+
+
+def cuda_status(torch_module: ModuleType) -> tuple[bool, str | None, tuple[int, int] | None]:
     cuda: Any = cast(Any, torch_module).cuda
     is_available = bool(cuda.is_available())
     device_name = str(cuda.get_device_name(0)) if is_available else None
-    return is_available, device_name
+    device_capability: tuple[int, int] | None = None
+    if is_available:
+        raw_capability = cuda.get_device_capability(0)
+        device_capability = (int(raw_capability[0]), int(raw_capability[1]))
+    return is_available, device_name, device_capability
 
 
 def describe_mount(path: Path) -> str:
@@ -33,13 +47,19 @@ def describe_mount(path: Path) -> str:
 
 def main() -> None:
     torch_module = load_torch()
-    cuda_available, device_name = cuda_status(torch_module)
+    torch_version, cuda_version, cudnn_version = torch_runtime(torch_module)
+    cuda_available, device_name, device_capability = cuda_status(torch_module)
     data_dir = Path(os.environ.get("DATA_DIR", "/data"))
 
     print("=== AI MLOps GPU smoke test ===", flush=True)
+    print(f"Torch version: {torch_version}", flush=True)
+    print(f"Torch CUDA build: {cuda_version}", flush=True)
+    print(f"cuDNN version: {cudnn_version}", flush=True)
     print(f"CUDA available: {cuda_available}", flush=True)
     if device_name is not None:
         print(f"GPU device: {device_name}", flush=True)
+    if device_capability is not None:
+        print(f"GPU capability: sm_{device_capability[0]}{device_capability[1]}", flush=True)
     print(f"Data mount: {describe_mount(data_dir)}", flush=True)
 
     for epoch in range(1, 6):

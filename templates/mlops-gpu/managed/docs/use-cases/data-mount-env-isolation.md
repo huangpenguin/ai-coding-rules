@@ -105,7 +105,7 @@ custom = resolve_dataset_dir("data_0607", "my_subset", env_override="MY_DATASET_
 - Env `DATA_DIR=/data`
 - 应用代码不变
 
-GitLab CI：在 **Settings → CI/CD → Variables** 设置 `DATA_MOUNT_SOURCE`（GPU Runner 宿主机路径）。见 [GPU Runner workflow](gpu-runner.zh-CN.md)。
+GitLab CI：Docker executor Runner 在 `config.toml` 中通过 `volumes` 把 GPU 宿主机路径挂载到 `/data`，job 内保持 `DATA_DIR=/data`。见 [GPU Runner workflow](gpu-runner.zh-CN.md)。
 
 ## 禁止事项
 

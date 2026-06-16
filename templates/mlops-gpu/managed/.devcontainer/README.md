@@ -15,7 +15,7 @@ Application code reads **`DATA_DIR`** (fixed to `/data` inside the container) pl
 
 ## A. One-time host prerequisites (new GPU machine)
 
-Run on the **Docker host** (e.g. gpu01):
+Run on the **Docker host** (e.g. main_gpu):
 
 ```bash
 nvidia-smi
@@ -36,6 +36,23 @@ init-ai add mlops-gpu --apply
 Ensure `python-quality` pack is applied so `.gitignore` includes `.devcontainer/devcontainer.local.json`.
 
 If the project has `pyproject.toml`, `postCreateCommand` runs `uv sync --dev` on first create.
+
+This is for interactive development only. GitLab GPU jobs install `uv` and sync project dependencies in the Docker executor job container; stable projects can later bake dependencies into a registry image and set `MLOPS_GPU_IMAGE`.
+
+The Docker base image already contains a validated PyTorch runtime:
+
+- `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`
+- `torch 2.6.x + cu124`
+- CUDA 12.4 / cuDNN 9.x
+- validated on NVIDIA V100 (`sm_70`)
+
+If the target project declares `torch` in `requirements.txt` or `pyproject.toml`, keep it in the same minor series:
+
+```text
+torch>=2.6.0,<2.7.0
+```
+
+Avoid loose constraints such as `torch>=1.7`; dependency resolution can install a newer torch than this template has validated.
 
 ## C. Before every Rebuild Container
 
@@ -83,7 +100,7 @@ ls "$DATA_DIR"
 uv run python train.py
 ```
 
-Expected: `DATA_DIR=/data`; GPU visible; host datasets appear under `/data/...` when mounted.
+Expected: `DATA_DIR=/data`; GPU visible; host datasets appear under `/data/...` when mounted. The smoke script also prints torch, CUDA, cuDNN and GPU capability. On V100, expect `torch 2.6.x + cu124` and `sm_70`.
 
 ## E. Team members with different host paths
 
@@ -118,4 +135,4 @@ More: [Data mount env isolation](../docs/use-cases/data-mount-env-isolation.md),
 
 ## H. CI parity
 
-GitLab CI uses the same names: `DATA_MOUNT_SOURCE` (host) → `/data` (container), `DATA_DIR=/data` in training code. Set `DATA_MOUNT_SOURCE` in **Settings → CI/CD → Variables** for real training jobs.
+GitLab CI keeps the same in-container contract: `DATA_DIR=/data` in training code. With Docker executor, mount the GPU host path in the Runner `config.toml` volumes, for example `/mnt/data:/data:ro`.

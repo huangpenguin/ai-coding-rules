@@ -1,131 +1,120 @@
 # =============================================================================
-# train.yml — GPU 训练调度（docker build + docker run）
+# train.yml — Docker executor GPU 训练调度
 # =============================================================================
 #
-# 【跑在哪】gpu01 上自建的 self-hosted Runner（tags: gpu-server），
-#           不是 GitLab 免费共享 Runner。网页点 Play 只是「下命令」，
-#           实际执行仍在你的 GPU 服务器上。
+# 【跑在哪】GPU 服务器上自建的 self-hosted Docker executor Runner。
+# GitLab Runner 直接拉起下面 image 指定的 GPU job 容器，job 脚本在容器内执行。
 #
-# 【Runner 必须用 shell executor，不要用 docker executor】
-#   shell executor  = CI 脚本直接在 GPU 宿主机 bash 里跑（像 SSH 登录后敲命令）
-#   docker executor = CI 脚本先被塞进 ubuntu 等临时容器 → 里面没有 docker/GPU → 必挂
+# 【Runner 必须配置 GPU Docker executor】
+# - runner executor: docker
+# - runner tags: linux, docker, gpu
+# - /etc/gitlab-runner/config.toml: [runners.docker] gpus = "all"
+# - 数据盘建议由 runner volumes 挂载，例如 /mnt/data:/data:ro
 #
-# 【两层 Docker 之「第 2 层」— 训练容器】
-# 本 job 没有 image: 字段；脚本里显式调用：
-#   docker build -f Dockerfile   ← 项目 Dockerfile 在这里才用到
-#   docker run --gpus all ...    ← 训练容器（PyTorch + GPU）
-#
-#   GitLab Play → shell 在宿主机跑 script → docker build/run 起训练容器
-#
-# 注册 Runner 时 tag 须与下方 tags 一致；详见 docs/use-cases/gpu-runner.zh-CN.md。
-# 触发：GitLab 网页 manual Play，或 commit message 含 [run train]。
+# 本模板不在 CI 脚本里执行 docker build / docker run；项目依赖由 job 内 uv 同步，
+# 或者后续改用已经构建好并推送到 registry 的项目镜像。
 # =============================================================================
 
-run_training:
+variables:
+  MLOPS_GPU_IMAGE: "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
+  UV_LINK_MODE: copy
+  DATA_DIR: "/data"
+  SMOKE_COMMAND: "python train.py"
+  TRAIN_COMMAND: "python train.py"
+
+.gpu_docker_base:
   stage: deploy
+  image: "$MLOPS_GPU_IMAGE"
   tags:
-    - gpu-server # 只分配给带 gpu-server 标签的 Runner；在 Settings → CI/CD → Runners 查看
-  timeout: 30m # 防止 docker build 长时间卡住
-  resource_group: gpu-training # 同项目训练 job 互斥，避免同时抢 GPU
-  needs: [] # 不等待 quality job；训练可独立派发（网页 Play 后由 Runner 领取执行）
+    - linux
+    - docker
+    - gpu
+  resource_group: gpu-training
+  needs: []
+  cache:
+    key:
+      files:
+        - pyproject.toml
+        - uv.lock
+        - requirements.txt
+    paths:
+      - .venv/
+      - .cache/uv/
+    policy: pull-push
+  before_script:
+    - |
+      set -euo pipefail
+
+      echo "Runner: ${CI_RUNNER_DESCRIPTION:-unknown}"
+      echo "Runner tags: ${CI_RUNNER_TAGS:-unknown}"
+      echo "GPU image: ${MLOPS_GPU_IMAGE}"
+      echo "DATA_DIR: ${DATA_DIR}"
+
+      if ! command -v nvidia-smi >/dev/null 2>&1; then
+        echo "ERROR: nvidia-smi not found inside the job container." >&2
+        echo "Check GitLab Runner docker executor config: [runners.docker] gpus = \"all\"." >&2
+        exit 1
+      fi
+      nvidia-smi
+
+      if ! command -v uv >/dev/null 2>&1; then
+        if ! command -v curl >/dev/null 2>&1; then
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl
+          rm -rf /var/lib/apt/lists/*
+        fi
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        export PATH="${HOME}/.local/bin:${PATH}"
+      fi
+
+      uv --version
+
+      if [[ -f pyproject.toml && -f uv.lock ]]; then
+        uv sync --frozen --dev
+      elif [[ -f pyproject.toml ]]; then
+        uv sync --dev
+      elif [[ -f requirements.txt ]]; then
+        uv venv
+        uv pip install -r requirements.txt
+      else
+        echo "No pyproject.toml, uv.lock, or requirements.txt found; using the base PyTorch image only."
+      fi
+
+      if [[ -d .venv ]]; then
+        export VIRTUAL_ENV="${CI_PROJECT_DIR}/.venv"
+        export PATH="${VIRTUAL_ENV}/bin:${PATH}"
+      fi
+
+      python - <<'PY'
+      import torch
+
+      print("torch:", torch.__version__)
+      print("cuda build:", torch.version.cuda)
+      print("cuda available:", torch.cuda.is_available())
+      print("device count:", torch.cuda.device_count())
+      if not torch.cuda.is_available():
+          raise SystemExit("CUDA is not available inside the GitLab Docker executor job container")
+      PY
+
+gpu_smoke:
+  extends: .gpu_docker_base
+  timeout: 30m
   rules:
-    # main 分支 + commit message 含 [run train] → 自动执行
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /\[run train\]/'
-      when: on_success
-    # main 分支其他 push → 在 GitLab Pipelines 页面手动点 Play；失败不阻塞整个 pipeline
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
       allow_failure: true
-  variables:
-    BUILD_MLOPS_IMAGE: "true" # true：用项目 Dockerfile 构建镜像；false：直接用 MLOPS_DOCKER_IMAGE
-    MLOPS_DOCKER_IMAGE: "" # 非空时跳过 build，直接使用指定镜像
-    MLOPS_RUN_ROOT: "$HOME/mlops-runs" # 持久运行目录，位于 Runner 所在主机
-    TRAIN_COMMAND: "python train.py" # 容器内执行的命令；真实项目可改为 uv run python -m src.train
-    DATA_MOUNT_SOURCE: "" # GPU 宿主机数据路径；为空时不挂载数据盘
-    DATA_MOUNT_TARGET: "/data" # 容器内挂载点
   script:
-    - |
-      set -euo pipefail
-      # 以下脚本必须在 shell executor 下跑在 GPU 宿主机上。
-      # 若 Runner 使用 docker executor，job 会进 ubuntu 容器，没有 docker / GPU，必然失败。
+    - bash -lc "${SMOKE_COMMAND}"
 
-      if ! command -v docker >/dev/null 2>&1; then
-        echo "ERROR: docker not found in this job environment." >&2
-        echo "Configure the gpu-server Runner with executor=shell on the GPU host, not executor=docker." >&2
-        echo "See docs/use-cases/gpu-runner.zh-CN.md." >&2
-        exit 1
-      fi
-
-      CONTAINER_NAME="train-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_REF_SLUG}"
-      RUN_DIR="${MLOPS_RUN_ROOT}/${CI_PROJECT_PATH_SLUG}/${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
-
-      # 选择镜像：显式指定 > 本地 build > PyTorch 官方 fallback
-      if [[ -n "${MLOPS_DOCKER_IMAGE:-}" ]]; then
-        IMAGE="${MLOPS_DOCKER_IMAGE}"
-      elif [[ "${BUILD_MLOPS_IMAGE}" == "true" ]]; then
-        IMAGE="mlops-${CI_PROJECT_PATH_SLUG}-${CI_COMMIT_SHORT_SHA}"
-      else
-        IMAGE="pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
-      fi
-
-      # 复制 checkout 到持久目录，避免 GitLab 清理 workspace 后训练文件丢失
-      echo "Preparing durable run directory: ${RUN_DIR}"
-      mkdir -p "${RUN_DIR}"
-      tar \
-        --exclude=.git \
-        --exclude=.venv \
-        --exclude=__pycache__ \
-        --exclude=.ruff_cache \
-        --exclude=.pytest_cache \
-        --exclude=.pyright \
-        -C "${CI_PROJECT_DIR}" \
-        -cf - . | tar -C "${RUN_DIR}" -xf -
-
-      if [[ "${BUILD_MLOPS_IMAGE}" == "true" ]]; then
-        echo "Building Docker image from ${RUN_DIR}/Dockerfile: ${IMAGE}"
-        docker build -t "${IMAGE}" -f "${RUN_DIR}/Dockerfile" "${RUN_DIR}"
-      fi
-
-      # 停止同分支旧容器，避免重复占用 GPU
-      echo "Stopping previous container for this branch, if any: ${CONTAINER_NAME}"
-      docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-      docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
-
-      docker_args=(
-        run
-        -d # 后台启动；CI job 会很快结束，训练在容器内继续跑
-        --gpus all
-        --name "${CONTAINER_NAME}"
-        --shm-size 16g # PyTorch DataLoader 多进程需要足够 shared memory
-        --user "$(id -u):$(id -g)"
-        --workdir /workspace
-        -e HOME=/tmp
-        -e PYTHONUNBUFFERED=1
-        -e UV_LINK_MODE=copy
-        -v "${RUN_DIR}:/workspace"
-      )
-
-      # 数据盘存在时才挂载；不存在则跳过（smoke test 仍可跑）
-      if [[ -n "${DATA_MOUNT_SOURCE:-}" && -d "${DATA_MOUNT_SOURCE}" ]]; then
-        docker_args+=(-v "${DATA_MOUNT_SOURCE}:${DATA_MOUNT_TARGET:-/data}")
-      else
-        echo "DATA_MOUNT_SOURCE is unset or missing; starting without dataset mount."
-      fi
-
-      # 密钥通过 GitLab CI/CD Variables 传入，不要写进仓库
-      if [[ -n "${WANDB_API_KEY:-}" ]]; then
-        docker_args+=(-e WANDB_API_KEY)
-      fi
-
-      if [[ -n "${MLFLOW_TRACKING_URI:-}" ]]; then
-        docker_args+=(-e MLFLOW_TRACKING_URI)
-      fi
-
-      docker_args+=("${IMAGE}" bash -lc "${TRAIN_COMMAND}")
-
-      echo "Starting training container from image: ${IMAGE}"
-      docker "${docker_args[@]}"
-      echo "Training container started: ${CONTAINER_NAME}"
-      echo "Run directory: ${RUN_DIR}"
-      # CI job 成功只代表容器已启动；训练结果请在本机执行：
-      echo "Follow logs with: docker logs -f ${CONTAINER_NAME}"
+run_training:
+  extends: .gpu_docker_base
+  timeout: 12h
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /\[run train\]/'
+      when: on_success
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true
+  script:
+    - bash -lc "${TRAIN_COMMAND}"

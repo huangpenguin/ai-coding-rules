@@ -2,8 +2,8 @@
 # quality.yml — 代码质量检查（Ruff / Pyright）
 # =============================================================================
 #
-# 【跑在哪】GitLab 共享 Runner（云端），不是 gpu-server。
-# 【不需要】tags: gpu-server，也不访问 /mnt/nfs_data。
+# 【跑在哪】GitLab 共享/默认 Docker Runner，不是 linux,docker,gpu GPU Runner。
+# 【不需要】GPU tags，也不访问 /mnt/data。
 #
 # 【两层 Docker 之「第 1 层」— CI job 环境】
 # 下面 image: 指定的是「跑 CI 脚本的临时容器」，由 GitLab Runner 自动拉起。
