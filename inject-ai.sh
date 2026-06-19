@@ -22,11 +22,11 @@ Usage:
 Packs:
   core              Cursor / Claude rules and project memory (default)
   python-quality    Ruff, Pyright, pre-commit, and .gitignore
-  ci-quality        GitHub Actions and GitLab quality CI
-  mlops-gpu         Docker, devcontainer, GitLab GPU training, and smoke test
+  ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
+  mlops-gpu         Docker, devcontainer, GitLab GPU training, and smoke test (auto-includes ci-quality)
 
 Profiles:
-  research-gpu      core + python-quality + ci-quality + mlops-gpu
+  research-gpu      core + mlops-gpu (pulls python-quality and ci-quality automatically)
 
 Modes:
   init              Initialize selected packs in the current project.
@@ -53,12 +53,17 @@ select_pack() {
   local pack="$1"
 
   case "${pack}" in
-    core|python-quality|ci-quality)
+    core|python-quality)
       add_pack_once "${pack}"
       ;;
-    mlops-gpu)
-      echo "Pack dependency: mlops-gpu also applies ci-quality."
+    ci-quality)
+      echo "Pack dependency: ci-quality also applies python-quality."
+      add_pack_once "python-quality"
       add_pack_once "ci-quality"
+      ;;
+    mlops-gpu)
+      echo "Pack dependency: mlops-gpu also applies ci-quality (which applies python-quality)."
+      select_pack ci-quality
       add_pack_once "mlops-gpu"
       ;;
     *)
@@ -75,8 +80,6 @@ select_profile() {
   case "${profile}" in
     research-gpu)
       select_pack core
-      select_pack python-quality
-      select_pack ci-quality
       select_pack mlops-gpu
       ;;
     *)
@@ -270,20 +273,62 @@ apply_pack() {
   copy_tree_files "${pack_dir}/preserve" "${TARGET_DIR}" preserve
 }
 
-install_python_quality_tools() {
-  local selected=false
+quality_pack_selected() {
   local pack
 
   for pack in "${PACKS[@]}"; do
     if [[ "${pack}" == "python-quality" ]]; then
-      selected=true
-      break
+      return 0
     fi
   done
 
-  if [[ "${selected}" == false ]]; then
+  return 1
+}
+
+derive_project_name() {
+  local project_name
+  project_name="$(basename "${TARGET_DIR}")"
+  project_name="${project_name#.}"
+  project_name="${project_name//[^a-zA-Z0-9._-]/-}"
+
+  if [[ -z "${project_name}" ]]; then
+    project_name="project"
+  fi
+
+  printf '%s' "${project_name}"
+}
+
+ensure_pyproject_for_quality() {
+  local project_name
+
+  if [[ -f "${TARGET_DIR}/pyproject.toml" ]]; then
+    return 0
+  fi
+
+  project_name="$(derive_project_name)"
+
+  echo
+  echo "No pyproject.toml found. CI and uv-based quality checks require one."
+  if [[ -f "${TARGET_DIR}/requirements.txt" || -f "${TARGET_DIR}/setup.py" ]]; then
+    echo "Legacy dependency files detected (requirements.txt / setup.py). They will be left unchanged."
+    echo "Migrate runtime dependencies into pyproject.toml separately when you are ready."
+  fi
+  echo "Scaffolding a minimal pyproject.toml (name: ${project_name})..."
+
+  if [[ "${DRY_RUN}" == true ]]; then
+    printf '%-8s %s\n' "ADD" "pyproject.toml (minimal uv scaffold)"
+    return 0
+  fi
+
+  uv init --name "${project_name}" --no-readme
+}
+
+install_python_quality_tools() {
+  if ! quality_pack_selected; then
     return
   fi
+
+  ensure_pyproject_for_quality
 
   echo
   if [[ "${DRY_RUN}" == true ]]; then
@@ -292,19 +337,19 @@ install_python_quality_tools() {
     return
   fi
 
-  if [[ -f "${TARGET_DIR}/pyproject.toml" ]]; then
-    echo "Detected pyproject.toml. Installing dev dependencies: ruff pyright pre-commit..."
-    uv add --dev ruff pyright pre-commit
+  if [[ ! -f "${TARGET_DIR}/pyproject.toml" ]]; then
+    echo "pyproject.toml is still missing. Skipping dev dependency installation." >&2
+    return
+  fi
 
-    if [[ -d "${TARGET_DIR}/.git" ]]; then
-      echo "Detected a Git repository. Installing the pre-commit hook..."
-      uv run pre-commit install
-    else
-      echo "No .git directory found. Skipping Git hook installation."
-    fi
+  echo "Installing dev dependencies: ruff pyright pre-commit..."
+  uv add --dev ruff pyright pre-commit
+
+  if [[ -d "${TARGET_DIR}/.git" ]]; then
+    echo "Detected a Git repository. Installing the pre-commit hook..."
+    uv run pre-commit install
   else
-    echo "No pyproject.toml found. Skipping dev dependency installation."
-    echo "pre-commit was not installed as a dev dependency. Skipping Git hook installation."
+    echo "No .git directory found. Skipping Git hook installation."
   fi
 }
 

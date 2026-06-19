@@ -26,10 +26,12 @@ init-ai
 
 ```bash
 init-ai add python-quality       # Ruff、Pyright、pre-commit、.gitignore
-init-ai add ci-quality           # GitHub Actions + GitLab quality CI
-init-ai add mlops-gpu            # Docker、devcontainer、GitLab GPU Runner、smoke test
-init-ai profile research-gpu     # core + python-quality + ci-quality + mlops-gpu
+init-ai add ci-quality           # GitHub/GitLab 质量 CI（自动带上 python-quality）
+init-ai add mlops-gpu            # Docker、devcontainer、GPU Runner（自动带上 ci-quality）
+init-ai profile research-gpu     # core + mlops-gpu（自动带上 python-quality 与 ci-quality）
 ```
+
+Pack 依赖会自动展开：`ci-quality` → `python-quality`；`mlops-gpu` → `ci-quality` → `python-quality`。若目标项目没有 `pyproject.toml`，会先 `uv init` 脚手架再安装 dev 工具；已有的 `requirements.txt` / `setup.py` 不会被修改。
 
 建议先预览：
 
@@ -42,7 +44,7 @@ init-ai add mlops-gpu --apply
 
 - **BasicSR 第一阶段微调 / legacy 研究仓库**：只运行 `init-ai`，先不要引入 Docker/CI。
 - **现代 Python 项目**：先 `init-ai`，再 `init-ai add python-quality`。
-- **需要 GitHub/GitLab 质量检查**：添加 `ci-quality`。
+- **需要 GitHub/GitLab 质量检查**：添加 `ci-quality`（会自动带上 python-quality 与 CI 所需的 dev 依赖）。
 - **需要实验室 GPU 服务器训练**：添加 `mlops-gpu`，或直接使用 `profile research-gpu`。
 
 ## 文档入口

@@ -26,10 +26,12 @@ This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`
 
 ```bash
 init-ai add python-quality       # Ruff, Pyright, pre-commit, .gitignore
-init-ai add ci-quality           # GitHub Actions + GitLab quality CI
-init-ai add mlops-gpu            # Docker, devcontainer, GitLab GPU Runner, smoke test
-init-ai profile research-gpu     # core + python-quality + ci-quality + mlops-gpu
+init-ai add ci-quality           # GitHub/GitLab quality CI (auto-includes python-quality)
+init-ai add mlops-gpu            # Docker, devcontainer, GPU Runner (auto-includes ci-quality)
+init-ai profile research-gpu     # core + mlops-gpu (pulls python-quality and ci-quality)
 ```
+
+Pack dependencies are applied automatically: `ci-quality` → `python-quality`; `mlops-gpu` → `ci-quality` → `python-quality`. If the target has no `pyproject.toml`, `init-ai` scaffolds one with `uv init` before installing dev tools. Legacy `requirements.txt` / `setup.py` files are left unchanged.
 
 Preview first:
 
@@ -42,7 +44,7 @@ init-ai add mlops-gpu --apply
 
 - **Legacy or research repo, e.g. BasicSR first-stage finetune:** run `init-ai` only. Add Docker/CI later if needed.
 - **Modern Python project:** run `init-ai`, then `init-ai add python-quality`.
-- **Project with GitHub/GitLab quality checks:** add `ci-quality`.
+- **Project with GitHub/GitLab quality checks:** add `ci-quality` (includes python-quality and dev deps for CI).
 - **GPU training project on your lab server:** add `mlops-gpu` or use `profile research-gpu`.
 
 ## Docs

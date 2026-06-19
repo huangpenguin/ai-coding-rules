@@ -16,8 +16,8 @@ templates/<pack>/
 |------|---------|
 | [core](core/) | Default: Cursor rules, `CLAUDE.md`, `.cursorrules`, memory scaffolding |
 | [python-quality](python-quality/) | Ruff, Pyright, pre-commit, `.gitignore` |
-| [ci-quality](ci-quality/) | GitHub Actions + GitLab quality CI |
-| [mlops-gpu](mlops-gpu/) | Docker, devcontainer, GPU Runner training, smoke test |
+| [ci-quality](ci-quality/) | GitHub Actions + GitLab quality CI (auto-includes python-quality) |
+| [mlops-gpu](mlops-gpu/) | Docker, devcontainer, GPU Runner training, smoke test (auto-includes ci-quality) |
 | [mlflow-experimental](mlflow-experimental/) | Reserved / experimental MLflow docs |
 
 ## Commands

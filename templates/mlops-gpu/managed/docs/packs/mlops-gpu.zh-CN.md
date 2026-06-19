@@ -21,7 +21,7 @@ init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 ```
 
-`mlops-gpu` 会自动带上 `ci-quality`，因为 GitLab 的训练 job 需要根 `.gitlab-ci.yml` include 入口。
+`mlops-gpu` 会自动带上 `ci-quality`（进而带上 `python-quality`），因为 GitLab 的训练 job 需要根 `.gitlab-ci.yml` include 入口，且 quality CI 需要 dev 组里的 `ruff` / `pyright`。
 
 训练 Runner 要求：
 
