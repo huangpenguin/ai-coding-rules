@@ -6,6 +6,7 @@
 
 - `ruff.toml`
 - `pyrightconfig.json`
+- `pyrightconfig.pre-push.json`（pre-push hook 用 `basic` 模式；CI 仍用 strict）
 - `.pre-commit-config.yaml`
 - `.gitignore`
 
@@ -21,7 +22,7 @@ init-ai add python-quality --apply
 | 阶段 | 工具 | 严格度 |
 |------|------|--------|
 | `git commit` | Ruff lint + format | 自动修复 |
-| `git push` | Pyright | `basic`（宽松，仅拦明显类型问题） |
+| `git push` | Pyright | `basic`（见 `pyrightconfig.pre-push.json`） |
 | CI | Ruff + Pyright | `strict`（见 `pyrightconfig.json`） |
 
 ## 依赖与环境文件
@@ -43,4 +44,4 @@ uv run pre-commit install
 uv run pre-commit install --hook-type pre-push
 ```
 
-若未安装 `init-ai`，可手动合并 `.pre-commit-config.yaml` 中 `repo: local` 的 `pyright` hook 段，再运行上述 `uv sync` 与两条 `pre-commit install` 命令。
+若未安装 `init-ai`，可手动合并 `.pre-commit-config.yaml` 中 `repo: local` 的 `pyright` hook 段，并复制 `pyrightconfig.pre-push.json`，再运行上述 `uv sync` 与两条 `pre-commit install` 命令。
