@@ -6,7 +6,7 @@
 - Default `init-ai` applies only the `core` pack so legacy or research repositories can receive AI rules without Docker/CI/MLOps files.
 - Optional packs:
   - `core`: Cursor / Claude rules and project memory.
-  - `python-quality`: Ruff, Pyright, pre-commit, and `.gitignore`.
+  - `python-quality`: Ruff, Pyright, pre-commit, and `.gitignore`. Git hooks: Ruff on commit; Pyright (`basic`) on pre-push; CI keeps Pyright `strict` via `pyrightconfig.json`.
   - `ci-quality`: GitHub Actions and GitLab quality CI. Auto-includes `python-quality`.
   - `mlops-gpu`: Docker, devcontainer, GitLab GPU Runner training, and smoke test. Auto-includes `ci-quality` (and thus `python-quality`).
   - `hf-space`: Hugging Face Space deploy via `git archive` + orphan repo + force push; excludes large local-only paths before push.

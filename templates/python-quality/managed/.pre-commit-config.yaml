@@ -5,3 +5,13 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright (basic, pre-push)
+        entry: uv run pyright --typecheckingmode basic
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true

@@ -334,7 +334,7 @@ install_python_quality_tools() {
   echo
   if [[ "${DRY_RUN}" == true ]]; then
     printf '%-8s %s\n' "SKIP" "uv add --dev ruff pyright pre-commit (dry-run)"
-    printf '%-8s %s\n' "SKIP" "uv run pre-commit install (dry-run)"
+    printf '%-8s %s\n' "SKIP" "uv run pre-commit install + pre-push hook (dry-run)"
     return
   fi
 
@@ -347,8 +347,9 @@ install_python_quality_tools() {
   uv add --dev ruff pyright pre-commit
 
   if [[ -d "${TARGET_DIR}/.git" ]]; then
-    echo "Detected a Git repository. Installing the pre-commit hook..."
+    echo "Detected a Git repository. Installing pre-commit and pre-push hooks..."
     uv run pre-commit install
+    uv run pre-commit install --hook-type pre-push
   else
     echo "No .git directory found. Skipping Git hook installation."
   fi
