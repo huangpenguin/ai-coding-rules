@@ -22,7 +22,7 @@ Environment:
                        from the export before push (e.g. sample_docs/public/legacy).
   DEPLOY_BRANCH        Target branch (default: main).
   DEPLOY_COMMIT_PREFIX Commit message prefix (default: Deploy).
-  GITHUB_SHA           Optional. Used in the deploy commit message; defaults to HEAD.
+  GITHUB_SHA           Optional. Commit to export and deploy; defaults to HEAD.
 
 Local config (optional, not committed):
   deploy-hf-space.env  Sourced from the repository root if present.
@@ -34,6 +34,25 @@ Examples:
   bash scripts/deploy-hf-space.sh --dry-run
   bash scripts/deploy-hf-space.sh
 EOF
+}
+
+validate_hf_space_git_url() {
+  local url="$1"
+
+  if [[ "${url}" == git@* || "${url}" == ssh://* ]]; then
+    echo "HF_SPACE_GIT_URL must be an HTTPS git URL, not SSH (got: ${url})." >&2
+    exit 1
+  fi
+
+  if [[ "${url}" == http://* ]]; then
+    echo "HF_SPACE_GIT_URL must use HTTPS, not HTTP (got: ${url})." >&2
+    exit 1
+  fi
+
+  if [[ "${url}" != https://* ]]; then
+    echo "HF_SPACE_GIT_URL must start with https:// (got: ${url})." >&2
+    exit 1
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -71,6 +90,8 @@ if [[ -z "${HF_SPACE_GIT_URL:-}" ]]; then
   exit 1
 fi
 
+validate_hf_space_git_url "${HF_SPACE_GIT_URL}"
+
 SOURCE_SHA="${GITHUB_SHA:-$(git -C "${SOURCE_REPO}" rev-parse HEAD)}"
 deploy_dir="$(mktemp -d)"
 
@@ -80,7 +101,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "Exporting ${SOURCE_SHA} from ${SOURCE_REPO}..."
-git -C "${SOURCE_REPO}" archive HEAD | tar -x -C "${deploy_dir}"
+git -C "${SOURCE_REPO}" archive "${SOURCE_SHA}" | tar -x -C "${deploy_dir}"
 
 if [[ -n "${DEPLOY_EXCLUDE_PATHS:-}" ]]; then
   for local_path in ${DEPLOY_EXCLUDE_PATHS}; do
@@ -96,7 +117,7 @@ fi
 
 space_url="${HF_SPACE_GIT_URL}"
 if [[ -n "${HF_TOKEN:-}" && "${space_url}" != *"@"* ]]; then
-  space_url="${HF_SPACE_GIT_URL/https:\/\//https://${HF_USERNAME:-oauth2}:${HF_TOKEN}@}"
+  space_url="https://${HF_USERNAME:-oauth2}:${HF_TOKEN}@${HF_SPACE_GIT_URL#https://}"
 fi
 
 if [[ "${DRY_RUN}" == true ]]; then
