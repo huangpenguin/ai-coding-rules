@@ -1,0 +1,28 @@
+name: Deploy HF Space
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy clean snapshot
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Hugging Face Space
+        env:
+          HF_SPACE_GIT_URL: ${{ secrets.HF_SPACE_GIT_URL }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_USERNAME: ${{ vars.HF_USERNAME }}
+          DEPLOY_EXCLUDE_PATHS: ${{ vars.DEPLOY_EXCLUDE_PATHS }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: bash scripts/deploy-hf-space.sh

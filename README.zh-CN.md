@@ -28,6 +28,7 @@ init-ai
 init-ai add python-quality       # Ruff、Pyright、pre-commit、.gitignore
 init-ai add ci-quality           # GitHub/GitLab 质量 CI（自动带上 python-quality）
 init-ai add mlops-gpu            # Docker、devcontainer、GPU Runner（自动带上 ci-quality）
+init-ai add hf-space             # HF Space 部署：git archive 干净快照 + force push
 init-ai profile research-gpu     # core + mlops-gpu（自动带上 python-quality 与 ci-quality）
 ```
 
@@ -46,6 +47,7 @@ init-ai add mlops-gpu --apply
 - **现代 Python 项目**：先 `init-ai`，再 `init-ai add python-quality`。
 - **需要 GitHub/GitLab 质量检查**：添加 `ci-quality`（会自动带上 python-quality 与 CI 所需的 dev 依赖）。
 - **需要实验室 GPU 服务器训练**：添加 `mlops-gpu`，或直接使用 `profile research-gpu`。
+- **Hugging Face Space 部署（本地可留大文件）**：添加 `hf-space`，用 `DEPLOY_EXCLUDE_PATHS` 剔除不上线的目录。
 
 ## 文档入口
 

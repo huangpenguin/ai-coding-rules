@@ -9,6 +9,7 @@
   - `python-quality`: Ruff, Pyright, pre-commit, and `.gitignore`.
   - `ci-quality`: GitHub Actions and GitLab quality CI. Auto-includes `python-quality`.
   - `mlops-gpu`: Docker, devcontainer, GitLab GPU Runner training, and smoke test. Auto-includes `ci-quality` (and thus `python-quality`).
+  - `hf-space`: Hugging Face Space deploy via `git archive` + orphan repo + force push; excludes large local-only paths before push.
   - `mlflow-experimental`: reserved for future MLflow tracking experiments.
 - When `python-quality` runs and the target has no `pyproject.toml`, `init-ai` scaffolds a minimal one with `uv init` before `uv add --dev ruff pyright pre-commit`. Legacy `requirements.txt` / `setup.py` files are left unchanged.
 - Root-level Docker/MLOps files are template material and should live under `templates/mlops-gpu/`, not at repository root.

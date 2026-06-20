@@ -18,6 +18,7 @@ templates/<pack>/
 | [python-quality](python-quality/) | Ruff, Pyright, pre-commit, `.gitignore` |
 | [ci-quality](ci-quality/) | GitHub Actions + GitLab quality CI (auto-includes python-quality) |
 | [mlops-gpu](mlops-gpu/) | Docker, devcontainer, GPU Runner training, smoke test (auto-includes ci-quality) |
+| [hf-space](hf-space/) | Hugging Face Space deploy via clean git archive snapshot |
 | [mlflow-experimental](mlflow-experimental/) | Reserved / experimental MLflow docs |
 
 ## Commands

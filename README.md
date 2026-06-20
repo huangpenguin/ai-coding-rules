@@ -28,6 +28,7 @@ This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`
 init-ai add python-quality       # Ruff, Pyright, pre-commit, .gitignore
 init-ai add ci-quality           # GitHub/GitLab quality CI (auto-includes python-quality)
 init-ai add mlops-gpu            # Docker, devcontainer, GPU Runner (auto-includes ci-quality)
+init-ai add hf-space             # HF Space deploy: clean git archive + force push
 init-ai profile research-gpu     # core + mlops-gpu (pulls python-quality and ci-quality)
 ```
 
@@ -46,6 +47,7 @@ init-ai add mlops-gpu --apply
 - **Modern Python project:** run `init-ai`, then `init-ai add python-quality`.
 - **Project with GitHub/GitLab quality checks:** add `ci-quality` (includes python-quality and dev deps for CI).
 - **GPU training project on your lab server:** add `mlops-gpu` or use `profile research-gpu`.
+- **Hugging Face Space with local-only large files:** add `hf-space`; exclude paths via `DEPLOY_EXCLUDE_PATHS`.
 
 ## Docs
 

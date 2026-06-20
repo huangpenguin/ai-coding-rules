@@ -24,6 +24,7 @@ Packs:
   python-quality    Ruff, Pyright, pre-commit, and .gitignore
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
   mlops-gpu         Docker, devcontainer, GitLab GPU training, and smoke test (auto-includes ci-quality)
+  hf-space          Orphan-repo deploy to Hugging Face Space (git archive + force push)
 
 Profiles:
   research-gpu      core + mlops-gpu (pulls python-quality and ci-quality automatically)
@@ -53,7 +54,7 @@ select_pack() {
   local pack="$1"
 
   case "${pack}" in
-    core|python-quality)
+    core|python-quality|hf-space)
       add_pack_once "${pack}"
       ;;
     ci-quality)

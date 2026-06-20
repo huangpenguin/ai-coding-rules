@@ -12,6 +12,7 @@ This folder keeps only **template-repository** guides that are not injected.
 | python-quality | [templates/python-quality/managed/docs/packs/python-quality.zh-CN.md](../templates/python-quality/managed/docs/packs/python-quality.zh-CN.md) |
 | ci-quality | [templates/ci-quality/managed/docs/packs/ci-quality.zh-CN.md](../templates/ci-quality/managed/docs/packs/ci-quality.zh-CN.md) |
 | mlops-gpu | [templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md](../templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md) |
+| hf-space | [templates/hf-space/managed/docs/packs/hf-space.zh-CN.md](../templates/hf-space/managed/docs/packs/hf-space.zh-CN.md) |
 | mlflow-experimental | [templates/mlflow-experimental/managed/docs/packs/mlflow-experimental.zh-CN.md](../templates/mlflow-experimental/managed/docs/packs/mlflow-experimental.zh-CN.md) |
 
 ## Docker / MLOps (mlops-gpu pack)
