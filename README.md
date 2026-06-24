@@ -2,7 +2,7 @@
 
 **Language:** English | [Simplified Chinese](README.zh-CN.md)
 
-Reusable AI engineering template packs for Python projects. The default `init-ai` command installs only the core Cursor / Claude rules and project memory files. Python quality checks, CI, Docker, GPU Runner training, and future MLOps features are opt-in packs.
+Reusable AI engineering template packs for any project. The default `init-ai` command installs only the language-agnostic **core** pack: Cursor / Claude rules and project memory. Python quality checks, CI, Docker, GPU Runner training, and other features are opt-in packs.
 
 ## Quick Start
 
@@ -20,19 +20,19 @@ cd your-project
 init-ai
 ```
 
-This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`, `MEMORY.md`, and project context directories.
+This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`, `MEMORY.md`, and project context directories. Core is language-agnostic (no Python/uv tooling).
 
 ## Optional Packs
 
 ```bash
-init-ai add python-quality       # Ruff, Pyright, pre-commit, .gitignore
+init-ai add python-quality       # Python only: Ruff, Pyright, pre-commit, python-uv rules
 init-ai add ci-quality           # GitHub/GitLab quality CI (auto-includes python-quality)
 init-ai add mlops-gpu            # Docker, devcontainer, GPU Runner (auto-includes ci-quality)
 init-ai add hf-space             # HF Space deploy: clean git archive + force push
 init-ai profile research-gpu     # core + mlops-gpu (pulls python-quality and ci-quality)
 ```
 
-Pack dependencies are applied automatically: `ci-quality` → `python-quality`; `mlops-gpu` → `ci-quality` → `python-quality`. If the target has no `pyproject.toml`, `init-ai` scaffolds one with `uv init` before installing dev tools. Legacy `requirements.txt` / `setup.py` files are left unchanged.
+Pack dependencies are applied automatically: `ci-quality` → `python-quality`; `mlops-gpu` → `ci-quality` → `python-quality`. **`python-quality` is Python-only**: it may run `uv init`, create `.venv`, and install Ruff/Pyright/pre-commit. Do not use it on Vue, frontend, or document-only repos.
 
 Preview first:
 
@@ -43,6 +43,7 @@ init-ai add mlops-gpu --apply
 
 ## Common Use Cases
 
+- **Vue / frontend / docs / mixed repo:** run `init-ai` only. Do not add `python-quality`, `ci-quality`, or `mlops-gpu`. Optionally document stack in `.cursor/project-context/overview.md`.
 - **Legacy or research repo, e.g. BasicSR first-stage finetune:** run `init-ai` only. Add Docker/CI later if needed.
 - **Modern Python project:** run `init-ai`, then `init-ai add python-quality`.
 - **Project with GitHub/GitLab quality checks:** add `ci-quality` (includes python-quality and dev deps for CI).

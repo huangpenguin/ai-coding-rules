@@ -4,14 +4,8 @@ CRITICAL: Before major architecture, debugging, or planning work, read `.cursor/
 
 # Global AI Coding Rules
 
-- Use `uv` only. Do not install dependencies with `pip install`, `conda install`, Poetry, or pipenv.
-- Add dependencies with `uv add` / `uv add --dev`; use `uv pip` only for explicit pip-compatible workflows.
-- Run Python commands with `uv run ...`.
-- Write precise Type Hints for new or modified Python code.
-- Prefer Pydantic for configuration, external inputs, API payloads, experiment specs, and structured runtime data.
-- Prefer Ruff for linting/formatting and Pyright-compatible typing unless the repository defines stricter standards.
-- Reuse existing modules before introducing new abstractions.
+- Reuse existing modules, components, configs, and project conventions before introducing new abstractions.
 - Keep changes tightly scoped; avoid opportunistic refactors.
 - Do not add silent fallbacks unless explicitly requested.
 - Keep project memory files concise and agent-readable; never store secrets, credentials, tokens, or long transcripts in them.
-- Optional Chinese-native docs mode: when explicitly enabled in `.cursor/project-context/`, write Python docstrings/comments in Simplified Chinese while preserving English technical terms.
+- Follow the project's existing package manager and scripts (for example `package.json`, `Makefile`, `uv run`, or documented project commands).

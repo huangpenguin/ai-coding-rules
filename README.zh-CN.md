@@ -2,7 +2,7 @@
 
 **Language / 语言:** [English](README.md) | 简体中文
 
-这是一个给 Python / AI 项目使用的工程化模板仓库。现在模板按 **pack** 拆分：默认 `init-ai` 只注入核心 Cursor / Claude 规则和项目记忆；Python 质量检查、GitHub/GitLab CI、Docker、GPU Runner 训练和未来的 MLOps 功能都需要显式启用。
+这是一个给任意项目使用的 AI 工程化模板仓库（Vue、前端、文档、Python 等）。模板按 **pack** 拆分：默认 `init-ai` 只注入语言无关的 **core**（Cursor / Claude 规则与项目记忆）；Python 质量检查、GitHub/GitLab CI、Docker、GPU Runner 训练等需显式启用。
 
 ## 快速开始
 
@@ -20,19 +20,19 @@ cd your-project
 init-ai
 ```
 
-默认只应用 `core` pack：`.cursor/rules/`、`CLAUDE.md`、`.cursorrules`、`MEMORY.md` 和项目上下文目录。
+默认只应用 `core` pack：`.cursor/rules/`、`CLAUDE.md`、`.cursorrules`、`MEMORY.md` 和项目上下文目录。core **语言无关**，不含 Python/uv 工具链。
 
 ## 可选 Pack
 
 ```bash
-init-ai add python-quality       # Ruff、Pyright、pre-commit、.gitignore
+init-ai add python-quality       # 仅 Python：Ruff、Pyright、pre-commit、python-uv 规则
 init-ai add ci-quality           # GitHub/GitLab 质量 CI（自动带上 python-quality）
 init-ai add mlops-gpu            # Docker、devcontainer、GPU Runner（自动带上 ci-quality）
 init-ai add hf-space             # HF Space 部署：git archive 干净快照 + force push
 init-ai profile research-gpu     # core + mlops-gpu（自动带上 python-quality 与 ci-quality）
 ```
 
-Pack 依赖会自动展开：`ci-quality` → `python-quality`；`mlops-gpu` → `ci-quality` → `python-quality`。若目标项目没有 `pyproject.toml`，会先 `uv init` 脚手架再安装 dev 工具；已有的 `requirements.txt` / `setup.py` 不会被修改。
+Pack 依赖会自动展开：`ci-quality` → `python-quality`；`mlops-gpu` → `ci-quality` → `python-quality`。**`python-quality` 仅用于 Python 项目**，会 `uv init`、创建 `.venv` 并安装 Ruff/Pyright/pre-commit；Vue、前端、纯文档仓库请勿使用。
 
 建议先预览：
 
@@ -43,6 +43,7 @@ init-ai add mlops-gpu --apply
 
 ## 常见场景
 
+- **Vue / 前端 / 文档 / 混合仓库**：只运行 `init-ai`，不要加 `python-quality`、`ci-quality`、`mlops-gpu`。建议在 `.cursor/project-context/overview.md` 写明技术栈。
 - **BasicSR 第一阶段微调 / legacy 研究仓库**：只运行 `init-ai`，先不要引入 Docker/CI。
 - **现代 Python 项目**：先 `init-ai`，再 `init-ai add python-quality`。
 - **需要 GitHub/GitLab 质量检查**：添加 `ci-quality`（会自动带上 python-quality 与 CI 所需的 dev 依赖）。

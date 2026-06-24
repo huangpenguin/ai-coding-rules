@@ -1,9 +1,12 @@
 # Python Quality Pack
 
-`python-quality` 添加本地质量检查配置。
+`python-quality` 添加 **Python 专用** 本地质量检查配置与 Cursor 规则。
+
+**警告：仅用于 Python 项目。** 会对非 Python 仓库执行 `uv init`、`uv add --dev ...` 并创建 `.venv`。Vue / 前端 / 文档仓库请只用 `init-ai`（core），不要运行本 pack。
 
 包含：
 
+- Cursor rules: `python-uv.mdc`、`bilingual-comments.mdc`
 - `ruff.toml`
 - `pyrightconfig.json`
 - `pyrightconfig.pre-push.json`（pre-push hook 用 `basic` 模式；CI 仍用 strict）
