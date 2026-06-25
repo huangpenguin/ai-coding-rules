@@ -32,7 +32,9 @@ init-ai add python-quality --apply
 
 - 若目标项目**已有** `pyproject.toml`：执行 `uv add --dev ruff pyright pre-commit`，并在有 `.git` 时安装 pre-commit 与 pre-push hook。
 - 若目标项目**没有** `pyproject.toml`：先用 `uv init` 生成最小 `pyproject.toml`，再安装上述 dev 依赖。
-- 若只有 `requirements.txt` / `setup.py`：这些文件**不会被修改**；你需要自行把运行时依赖迁移进 `pyproject.toml`。
+- 若只有 `requirements.txt` / `setup.py`：这些文件**不会被修改**；运行时依赖仍从 `requirements.txt` 安装。
+- **半迁移状态**（inject 后有 `pyproject.toml` 但 `dependencies = []`，同时保留 `requirements.txt`）：`uv sync --dev` **只装 dev 工具**，不会装 torch 等运行时包。若已启用 `mlops-gpu`，Rebuild devcontainer 或 GitLab GPU job 会跑 `scripts/uv-bootstrap.sh` 补齐；否则需手动按 requirements 安装。
+- 完整迁移：把依赖写入 `pyproject.toml`，GPU 项目合并 `pyproject-uv-pytorch.snippet.toml`（cu124 index），`uv lock`，提交 `uv.lock`。
 
 `ci-quality` 与 `mlops-gpu` 会自动带上本 pack，无需单独再执行一次。
 

@@ -71,8 +71,7 @@ Settings → CI/CD → Runners → New project runner
 ```text
 GitLab Runner docker executor
 → pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel job container
-→ install uv
-→ sync pyproject.toml / uv.lock / requirements.txt
+→ bash scripts/uv-bootstrap.sh
 → run ${SMOKE_COMMAND}
 ```
 
@@ -88,12 +87,13 @@ GitLab Runner docker executor
 MLOPS_GPU_IMAGE: "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
 ```
 
-该镜像不保证内置 `uv`，模板会在 job 内安装 `uv` 并按以下优先级同步依赖：
+该镜像不保证内置 `uv`，模板会在 job 内安装 `uv` 并执行 `scripts/uv-bootstrap.sh`：
 
 1. `pyproject.toml` + `uv.lock`：`uv sync --frozen --dev`
-2. 只有 `pyproject.toml`：`uv sync --dev`
-3. 只有 `requirements.txt`：`uv venv && uv pip install -r requirements.txt`
-4. 没有环境文件：直接使用基础 PyTorch 镜像
+2. 半迁移（空 `dependencies` + `requirements.txt`）：requirements + cu124 index + dev 工具
+3. 只有 `requirements.txt`：`uv venv` + requirements（含 torch 时 cu124 index）+ 可选 editable install
+4. 只有 `pyproject.toml`：`uv sync --dev`
+5. 没有环境文件：直接使用基础 PyTorch 镜像
 
 ## 配置数据挂载
 

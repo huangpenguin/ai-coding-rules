@@ -35,24 +35,20 @@ init-ai add mlops-gpu --apply
 
 Ensure `python-quality` pack is applied so `.gitignore` includes `.devcontainer/devcontainer.local.json`.
 
-If the project has `pyproject.toml`, `postCreateCommand` runs `uv sync --dev` on first create.
+On **Rebuild Container**, `postCreateCommand` runs `scripts/uv-bootstrap.sh` — the same script GitLab GPU jobs use. This creates `/workspace/.venv` and installs runtime + dev dependencies.
 
-This is for interactive development only. GitLab GPU jobs install `uv` and sync project dependencies in the Docker executor job container; stable projects can later bake dependencies into a registry image and set `MLOPS_GPU_IMAGE`.
+| Project state | What bootstrap does |
+|---------------|---------------------|
+| `pyproject.toml` + `uv.lock` | `uv sync --frozen --dev` |
+| Semi-migrated (`dependencies = []` + `requirements.txt`) | Install from `requirements.txt` (cu124 index for torch) + dev tools |
+| `requirements.txt` only | `uv venv` + requirements + optional `uv pip install -e .` |
+| `pyproject.toml` only | `uv sync --dev` |
 
-The Docker base image already contains a validated PyTorch runtime:
+**Do not** run only `uv sync --dev` on legacy projects and assume torch/opencv/etc. are installed.
 
-- `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`
-- `torch 2.6.x + cu124`
-- CUDA 12.4 / cuDNN 9.x
-- validated on NVIDIA V100 (`sm_70`)
+VS Code interpreter is set to `/workspace/.venv/bin/python` (matches `uv run`).
 
-If the target project declares `torch` in `requirements.txt` or `pyproject.toml`, keep it in the same minor series:
-
-```text
-torch>=2.6.0,<2.7.0
-```
-
-Avoid loose constraints such as `torch>=1.7`; dependency resolution can install a newer torch than this template has validated.
+The Docker base image still contains conda PyTorch for reference, but **project commands use `.venv`**, not `/opt/conda`.
 
 ## C. Before every Rebuild Container
 
@@ -97,10 +93,11 @@ Inside the container:
 echo "DATA_DIR=$DATA_DIR"
 nvidia-smi
 ls "$DATA_DIR"
+uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
 uv run python train.py
 ```
 
-Expected: `DATA_DIR=/data`; GPU visible; host datasets appear under `/data/...` when mounted. The smoke script also prints torch, CUDA, cuDNN and GPU capability. On V100, expect `torch 2.6.x + cu124` and `sm_70`.
+Expected: `DATA_DIR=/data`; GPU visible; torch in `.venv` is `2.6.x+cu124` with CUDA available on V100 (`sm_70`).
 
 ## E. Team members with different host paths
 
@@ -130,6 +127,8 @@ Do **not** commit personal paths into `devcontainer.json`.
 | `permission denied` connecting to Docker | User not in `docker` group | `docker info`; fix group membership |
 | `/data` empty inside container | Mount skipped or wrong source | Rebuild after export; verify host path |
 | Data outside repo invisible | Only `/workspace` mounted by default | Use `/data` bind mount, not symlinks to `../input` |
+| Agent reinstalls huge torch from PyPI | Only `uv sync --dev` on semi-migrated project | Rebuild Container (runs `uv-bootstrap.sh`); migrate with `pyproject-uv-pytorch.snippet.toml` |
+| `torch.cuda.is_available()` false on V100 | Wrong torch build (e.g. 2.12 from PyPI) | Ensure `uv-bootstrap.sh` ran; pin cu124 via snippet or `MLOPS_PYTORCH_INDEX` |
 
 More: [Data mount env isolation](../docs/use-cases/data-mount-env-isolation.md), [GPU Runner workflow](../docs/use-cases/gpu-runner.zh-CN.md).
 

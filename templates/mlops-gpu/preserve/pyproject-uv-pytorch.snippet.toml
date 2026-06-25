@@ -1,0 +1,21 @@
+# Optional snippet: append to pyproject.toml when migrating off requirements.txt.
+# Pins torch/torchvision to the validated cu124 index used by mlops-gpu templates.
+#
+# After merging, run: uv lock && uv sync --frozen --dev
+# Then remove requirements.txt when CI/devcontainer both use uv.lock.
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+torchvision = { index = "pytorch-cu124" }
+
+# Example runtime pin (adjust to your project):
+# [project]
+# dependencies = [
+#     "torch>=2.6.0,<2.7.0",
+#     "torchvision>=0.21.0,<0.22.0",
+# ]

@@ -117,8 +117,8 @@ torch>=2.6.0,<2.7.0
 
 推荐优先级：
 
-1. 新项目：`pyproject.toml` + `uv.lock`，GitLab job 中 `uv sync --frozen --dev`
-2. 旧项目过渡：`requirements.txt`，GitLab job 中 `uv venv && uv pip install -r requirements.txt`
+1. 新项目：`pyproject.toml` + `uv.lock`，`uv-bootstrap.sh` → `uv sync --frozen --dev`
+2. 旧项目过渡：`requirements.txt`（或半迁移），`uv-bootstrap.sh` 自动处理 cu124 torch
 3. 稳定生产训练：把依赖固化进项目镜像，推送到 registry 后设置 `MLOPS_GPU_IMAGE`
 
 不要把项目依赖安装到 GPU Runner 宿主机。GPU Runner 宿主机只负责 Docker executor、NVIDIA runtime 和数据盘挂载。
@@ -152,8 +152,7 @@ gpu_smoke
 
 ```text
 pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel job container
-install uv
-sync pyproject.toml / uv.lock / requirements.txt
+bash scripts/uv-bootstrap.sh
 run ${SMOKE_COMMAND}
 ```
 

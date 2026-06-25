@@ -34,7 +34,8 @@
 - New DL repositories without environment files should still run the template smoke test on the default PyTorch/CUDA image before adding project-specific dependencies.
 - For GPU Docker defaults, prefer a stable PyTorch CUDA 12.4 image for Ubuntu 24.04 + NVIDIA `570-server` or newer.
 - Current validated GPU stack: `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`, `torch 2.6.x + cu124`, cuDNN 9.x, NVIDIA V100 (`sm_70`, 32GB).
-- Target project Python dependencies should pin torch to the validated minor series, e.g. `torch>=2.6.0,<2.7.0`; avoid broad lower bounds such as `torch>=1.7`.
+- Target project Python dependencies should pin torch to the validated minor series, e.g. `torch>=2.6.0,<2.7.0`; avoid broad lower bounds such as `torch>=1.7`. For legacy `requirements.txt` installs, `scripts/uv-bootstrap.sh` adds the cu124 PyTorch index; migrated projects should use `[tool.uv.index]` / `[tool.uv.sources]` from `pyproject-uv-pytorch.snippet.toml`.
+- **Single bootstrap script**: `templates/mlops-gpu/managed/scripts/uv-bootstrap.sh` is the canonical dependency install path for devcontainer `postCreateCommand` and GitLab GPU `before_script`. Base image conda PyTorch and project `.venv` are separate; bootstrap must run before `uv run` works with runtime deps.
 - BasicSR first-stage finetuning should usually use `init-ai` core-only first; add Docker/CI packs after the training command and environment needs are clearer.
 
 ## Git Remotes (maintainer checkout)

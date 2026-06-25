@@ -11,7 +11,8 @@
 - `.devcontainer/devcontainer.local.json.example`（gitignore 本地挂载备选）
 - `.gitlab/ci/train.yml`
 - `train.py`（仅目标项目不存在时创建）
-- `scripts/data_paths.py`（仅目标项目不存在时创建）
+- `scripts/uv-bootstrap.sh`（devcontainer 与 GitLab GPU job 共用依赖安装逻辑）
+- `pyproject-uv-pytorch.snippet.toml`（从 requirements.txt 迁到 pyproject.toml + uv.lock 时的 cu124 片段）
 - Docker / GPU 相关文档
 
 命令：
@@ -32,6 +33,30 @@ init-ai add mlops-gpu --apply
 - Runner `config.toml` 中设置 `[runners.docker] gpus = "all"`
 - 数据集通过 runner volumes 挂载，例如 `/mnt/data:/data:ro`
 
+## 项目 Python 环境（镜像 vs `.venv`）
+
+GPU 基础镜像（conda）里已有 PyTorch，但模板工作流统一走 **`uv run` + `/workspace/.venv`**。镜像 conda 与项目 venv **不是同一套环境**。
+
+devcontainer `postCreateCommand` 与 GitLab GPU `before_script` 都执行：
+
+```bash
+bash scripts/uv-bootstrap.sh
+```
+
+| 项目状态 | bootstrap 行为 |
+|----------|----------------|
+| `pyproject.toml` + `uv.lock` | `uv sync --frozen --dev` |
+| 半迁移（`dependencies = []` + `requirements.txt`） | 从 requirements 装运行时依赖（cu124 index）+ dev 工具 |
+| 仅 `requirements.txt` | `uv venv` + requirements（含 torch 时用 cu124）+ 可选 `uv pip install -e .` |
+| 仅 `pyproject.toml` | `uv sync --dev` |
+| 无依赖文件 | 仅用基础镜像 |
+
+**半迁移陷阱**：inject `python-quality` 后常有空 `pyproject.toml` 和完整 `requirements.txt`。只跑 `uv sync --dev` 会误以为环境就绪，实际 torch 等运行时依赖全缺。
+
+VS Code interpreter 指向 `/workspace/.venv/bin/python`，与 `uv run` 一致。
+
+迁移到 lock 工作流：合并 `pyproject-uv-pytorch.snippet.toml`，写入 `[project].dependencies`，`uv lock && uv sync --frozen --dev`，提交 `uv.lock`。
+
 ## GPU 镜像与依赖管理
 
 本 pack 默认先使用 `MLOPS_GPU_IMAGE` 指定的 GPU 基础镜像运行 GitLab job：
@@ -46,8 +71,8 @@ pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
 
 1. 新仓库没有环境文件时，先直接使用默认 PyTorch/CUDA 镜像跑 `gpu_smoke`。
 2. 用 `gpu_smoke` 或本地 `docker run --gpus all` 验证 GPU、torch、CUDA、cuDNN。
-3. 需要加 Python 包时，优先提交 `pyproject.toml` + `uv.lock`，由 GitLab job 执行 `uv sync --frozen --dev`。
-4. 旧项目只有 `requirements.txt` 时，可先由 GitLab job 执行 `uv venv && uv pip install -r requirements.txt` 过渡。
+3. 需要加 Python 包时，优先提交 `pyproject.toml` + `uv.lock`；`uv-bootstrap.sh` 会执行 `uv sync --frozen --dev`。
+4. 旧项目只有 `requirements.txt`（或半迁移状态）时，由 `uv-bootstrap.sh` 自动从 requirements 安装，并对 torch 使用 cu124 index。
 5. 不要把项目依赖安装到 GPU Runner 宿主机；宿主机只负责 Docker、NVIDIA runtime 和 GitLab Runner。
 
 详细方法见 [Customize Dockerfile](../docker/customize-dockerfile.zh-CN.md)。
@@ -62,7 +87,7 @@ pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
 torch>=2.6.0,<2.7.0
 ```
 
-不要使用 `torch>=1.7` 这类过宽约束，避免 resolver 把 `.venv` 升到未验证的大版本。
+不要使用 `torch>=1.7` 这类过宽约束。仅写 minor pin 不够时，legacy `requirements.txt` 路径由 `uv-bootstrap.sh` 自动加 `--extra-index-url https://download.pytorch.org/whl/cu124`；迁移到 `pyproject.toml` 后请用 `pyproject-uv-pytorch.snippet.toml` 里的 `[tool.uv.index]` / `[tool.uv.sources]`。
 
 ## Dev Container 基线（inject 后不要删）
 

@@ -70,20 +70,21 @@ variables:
 
       uv --version
 
-      if [[ -f pyproject.toml && -f uv.lock ]]; then
-        uv sync --frozen --dev
-      elif [[ -f pyproject.toml ]]; then
-        uv sync --dev
-      elif [[ -f requirements.txt ]]; then
-        uv venv
-        uv pip install -r requirements.txt
-      else
-        echo "No pyproject.toml, uv.lock, or requirements.txt found; using the base PyTorch image only."
+      if [[ ! -f scripts/uv-bootstrap.sh ]]; then
+        echo "ERROR: scripts/uv-bootstrap.sh not found. Re-run init-ai add mlops-gpu --update --apply." >&2
+        exit 1
       fi
+
+      bash scripts/uv-bootstrap.sh
 
       if [[ -d .venv ]]; then
         export VIRTUAL_ENV="${CI_PROJECT_DIR}/.venv"
         export PATH="${VIRTUAL_ENV}/bin:${PATH}"
+      fi
+
+      if ! command -v python >/dev/null 2>&1; then
+        echo "ERROR: python not found after uv-bootstrap." >&2
+        exit 1
       fi
 
       python - <<'PY'

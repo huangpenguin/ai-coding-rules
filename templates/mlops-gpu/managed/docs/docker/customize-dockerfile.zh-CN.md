@@ -8,7 +8,7 @@
 - **Dockerfile 是稳定项目镜像入口**：依赖稳定后，Dev Container、手动 `docker run` 和 `MLOPS_GPU_IMAGE` 可复用同一个项目镜像。
 - **包声明进仓库**：Python 依赖放在 `pyproject.toml` + `uv.lock`，旧项目可暂用 `requirements.txt`。
 - **不要改 Runner 宿主机环境**：GPU Runner 宿主机只安装 Docker、NVIDIA driver、NVIDIA Container Toolkit、GitLab Runner。
-- **不要依赖 Dev Container 的 `postCreateCommand` 做 CI 环境**：`postCreateCommand` 只服务交互开发；GitLab job 会自己安装 `uv` 并同步依赖。
+- **不要依赖 Dev Container 的 `postCreateCommand` 做 CI 环境**：CI 与 devcontainer 共用 `scripts/uv-bootstrap.sh`，但各自在独立容器内执行；不要把依赖只装在宿主机或 Runner 上。
 
 ## 1. 新仓库没有环境文件时
 
@@ -89,12 +89,29 @@ SMOKE_COMMAND="uv run python train.py"
 
 ## 3. 旧项目：从 requirements.txt 迁移
 
-旧仓库如果只有 `requirements.txt`，默认 GitLab job 会执行：
+旧仓库如果只有 `requirements.txt`，或 inject 后出现 **半迁移**（`pyproject.toml` 存在但 `dependencies = []`，同时保留 `requirements.txt`），devcontainer 与 GitLab GPU job 都会执行同一脚本：
 
 ```bash
-uv venv
-uv pip install -r requirements.txt
+bash scripts/uv-bootstrap.sh
 ```
+
+脚本行为摘要：
+
+| 项目状态 | 行为 |
+|----------|------|
+| `pyproject.toml` + `uv.lock` | `uv sync --frozen --dev` |
+| 半迁移（空 runtime deps + `requirements.txt`） | 从 `requirements.txt` 装运行时依赖（cu124 index）+ `uv sync --dev --no-install-project --inexact` 装 dev 工具 |
+| 仅 `requirements.txt` | `uv venv` + `uv pip install -r requirements.txt`（含 torch 时用 cu124 index）+ 可选 `uv pip install -e .` |
+| 仅 `pyproject.toml` | `uv sync --dev` |
+
+**不要**在旧项目上只跑 `uv sync --dev` 就认为环境就绪。
+
+### 迁移到 pyproject.toml + uv.lock（推荐）
+
+1. 将 `pyproject-uv-pytorch.snippet.toml` 中的 `[tool.uv.index]` / `[tool.uv.sources]` 合并进 `pyproject.toml`。
+2. 把 `requirements.txt` 中的运行时依赖写入 `[project].dependencies`（torch 建议 `>=2.6.0,<2.7.0`）。
+3. 运行 `uv lock && uv sync --frozen --dev`，提交 `uv.lock`。
+4. 确认 `uv-bootstrap.sh` 走 lock 路径后，再删除 `requirements.txt`。
 
 如果要固化进项目镜像，可以写入 Dockerfile：
 
@@ -104,7 +121,9 @@ ENV VIRTUAL_ENV=/opt/mlops-venv
 ENV PATH="/opt/mlops-venv/bin:${PATH}"
 
 COPY requirements.txt ./
-RUN uv pip install -r requirements.txt
+RUN uv pip install -r requirements.txt \
+    --index-url https://pypi.org/simple \
+    --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
 后续再迁移到 `pyproject.toml` + `uv.lock`。不要手动装到 GPU 服务器宿主机。
