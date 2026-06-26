@@ -1,0 +1,10 @@
+# Optional snippet: merge into ruff.toml to skip legacy directories.
+# Example paths for forked upstream repos (BasicSR, third_party, etc.).
+
+[lint]
+extend-exclude = [
+    "basicsr",
+    "experiments",
+    "third_party",
+    "options",
+]

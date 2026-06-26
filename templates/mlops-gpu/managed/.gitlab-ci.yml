@@ -1,9 +1,9 @@
 # 根 CI 编排文件：定义全局 pipeline 行为，具体 job 拆到 .gitlab/ci/ 下。
 # GitLab 会在 push / MR 时读取本文件并创建 pipeline。
 #
-# 两类 job 对比：
-#   quality.yml  → GitLab 共享 Runner + image（第 1 层：CI 临时容器）
-#   train.yml    → linux,docker,gpu 自建 GPU Runner + Docker executor + GPU job 容器
+# mlops-gpu pack：仅 GPU 训练调度（train.yml）。
+# 质量检查（quality.yml）属于 ci-quality pack；若两个 pack 都已 inject，
+# 请手动合并根 .gitlab-ci.yml（见 README「Combine GitLab CI」）。
 
 default:
   interruptible: true
@@ -19,7 +19,6 @@ workflow:
     - if: $CI_COMMIT_BRANCH == "main"
 
 stages:
-  - quality
   - deploy
 
 variables:
@@ -27,5 +26,4 @@ variables:
   UV_LINK_MODE: copy
 
 include:
-  - local: .gitlab/ci/quality.yml
   - local: .gitlab/ci/train.yml

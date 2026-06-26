@@ -25,6 +25,7 @@ stages:
 variables:
   FF_USE_FASTZIP: "true" # 加速 GitLab artifact / cache 传输
   UV_LINK_MODE: copy
+  QUALITY_CI_BLOCKING: "true" # 本模板仓库：quality 自动跑且阻塞
 
 include:
   - local: .gitlab/ci/quality.yml

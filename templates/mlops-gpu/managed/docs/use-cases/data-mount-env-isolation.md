@@ -107,11 +107,38 @@ custom = resolve_dataset_dir("data_0607", "my_subset", env_override="MY_DATASET_
 
 GitLab CI：Docker executor Runner 在 `config.toml` 中通过 `volumes` 把 GPU 宿主机路径挂载到 `/data`，job 内保持 `DATA_DIR=/data`。见 [GPU Runner workflow](gpu-runner.zh-CN.md)。
 
+## 挂载策略（不要挂载整个 `$HOME`）
+
+模板 **只** bind 两类路径：
+
+| 宿主机 | 容器 | 用途 |
+|--------|------|------|
+| 项目仓库目录（`localWorkspaceFolder`） | `/workspace` | 代码与 `.venv` |
+| `DATA_MOUNT_SOURCE`（单一数据目录） | `/data` | 训练/评测数据 |
+
+**禁止**把整个用户家目录挂进容器，例如：
+
+```json
+"mounts": ["source=${localEnv:HOME},target=/home/vscode,type=bind"]
+```
+
+这会把 `.cursor-server`、`.cache`、`.gvfs` 等宿主机状态带进容器。服务器重启或重连后，Cursor Server 安装、扩展缓存、虚拟文件系统常发生冲突。
+
+正确做法：
+
+- 代码：只 bind **项目仓库根目录**（在 IDE 中打开 repo，不要以 `$HOME` 为工作区）。
+- 数据：只 bind **一个**数据目录到 `/data`。
+- 需要持久化下载缓存时：用 **Named Volume** 挂单个目录（如 `/home/vscode/.cache/uv`），见 `devcontainer.local.json.example` Option F；不要挂整个 `$HOME`。
+
+Option D（`${HOME}/.local/share/mlops-empty-data` → `/data`）只是用家目录下的**子路径**作空数据占位，不是挂载整个 `$HOME`。
+
 ## 禁止事项
 
 - 不要用 Dockerfile 做数据 bind mount。
 - 不要把个人宿主机路径 commit 进 `devcontainer.json`。
+- **不要** bind 整个 `$HOME` 到 `/home/vscode` 或 `/workspace`。
 - 不要依赖 workspace 外路径的 symlink 而不挂载目标目录。
+- 不要把 `.venv` symlink 到仓库外的宿主机路径。
 - 不要假设项目 `.env` 会自动填充 `${localEnv:DATA_MOUNT_SOURCE}` — 在宿主机 export 或使用 gitignore 的 `devcontainer.local.json`。
 
 ## 验证清单

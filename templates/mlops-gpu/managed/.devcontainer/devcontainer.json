@@ -33,7 +33,8 @@
       ],
       "settings": {
         "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
-        "python.terminal.activateEnvironment": false
+        "python.terminal.activateEnvironment": false,
+        "remote.containers.copyGitConfig": false
       }
     }
   }

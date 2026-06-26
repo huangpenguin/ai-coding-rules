@@ -1,8 +1,9 @@
 # 根 CI 编排文件：定义全局 pipeline 行为，具体 job 拆到 .gitlab/ci/ 下。
 # GitLab 会在 push / MR 时读取本文件并创建 pipeline。
 #
-# 本仓库默认只运行 quality CI。GPU 训练调度属于 mlops-gpu pack，
-# 注入到目标项目后会由该 pack 的 .gitlab-ci.yml include train job。
+# ci-quality pack：仅 Ruff / Pyright 质量检查（quality.yml）。
+# GPU 训练（train.yml）属于 mlops-gpu pack；若两个 pack 都已 inject，
+# 请手动合并根 .gitlab-ci.yml（见 README「Combine GitLab CI」）。
 
 default:
   interruptible: true # MR 有新提交时，取消旧的 pipeline，节省 Runner 资源
@@ -24,6 +25,8 @@ stages:
 variables:
   FF_USE_FASTZIP: "true" # 加速 GitLab artifact / cache 传输
   UV_LINK_MODE: copy
+  # false = quality jobs manual + allow_failure; true = blocking gate on MR/main
+  QUALITY_CI_BLOCKING: "false"
 
 include:
   - local: .gitlab/ci/quality.yml

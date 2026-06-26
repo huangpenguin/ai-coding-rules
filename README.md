@@ -2,7 +2,7 @@
 
 **Language:** English | [Simplified Chinese](README.zh-CN.md)
 
-Reusable AI engineering template packs for any project. The default `init-ai` command installs only the language-agnostic **core** pack: Cursor / Claude rules and project memory. Python quality checks, CI, Docker, GPU Runner training, and other features are opt-in packs.
+Reusable AI engineering template packs for any project. The default `init-ai` command installs only the language-agnostic **core** pack. All other capabilities are **separate packs** you add manually—there are no bundled profiles.
 
 ## Quick Start
 
@@ -22,33 +22,69 @@ init-ai
 
 This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`, `MEMORY.md`, and project context directories. Core is language-agnostic (no Python/uv tooling).
 
-## Optional Packs
+## Packs (add manually)
 
-```bash
-init-ai add python-quality       # Python only: Ruff, Pyright, pre-commit, python-uv rules
-init-ai add ci-quality           # GitHub/GitLab quality CI (auto-includes python-quality)
-init-ai add mlops-gpu            # Docker, devcontainer, GPU Runner (auto-includes ci-quality)
-init-ai add hf-space             # HF Space deploy: clean git archive + force push
-init-ai profile research-gpu     # core + mlops-gpu (pulls python-quality and ci-quality)
-```
+| Pack | Command | What it adds | Does **not** add |
+|------|---------|--------------|------------------|
+| **core** | `init-ai` | Cursor/Claude rules, project memory | Python, CI, Docker |
+| **python-quality** | `init-ai add python-quality` | Ruff, Pyright, pre-commit config, python-uv rules | CI, GPU, auto git hooks |
+| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality) |
+| **mlops-gpu** | `init-ai add mlops-gpu` | Docker, devcontainer, **train** CI, uv-bootstrap | quality CI, ruff (standalone pack) |
+| **hf-space** | `init-ai add hf-space` | HF Space deploy script | — |
 
-Pack dependencies are applied automatically: `ci-quality` → `python-quality`; `mlops-gpu` → `ci-quality` → `python-quality`. **`python-quality` is Python-only**: it may run `uv init`, create `.venv`, and install Ruff/Pyright/pre-commit. Do not use it on Vue, frontend, or document-only repos.
+Only **one** automatic dependency: `ci-quality` → `python-quality` (CI needs the same ruff/pyright configs).
 
-Preview first:
+Preview before apply:
 
 ```bash
 init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 ```
 
-## Common Use Cases
+## Common paths (manual composition)
 
-- **Vue / frontend / docs / mixed repo:** run `init-ai` only. Do not add `python-quality`, `ci-quality`, or `mlops-gpu`. Optionally document stack in `.cursor/project-context/overview.md`.
-- **Legacy or research repo, e.g. BasicSR first-stage finetune:** run `init-ai` only. Add Docker/CI later if needed.
-- **Modern Python project:** run `init-ai`, then `init-ai add python-quality`.
-- **Project with GitHub/GitLab quality checks:** add `ci-quality` (includes python-quality and dev deps for CI).
-- **GPU training project on your lab server:** add `mlops-gpu` or use `profile research-gpu`.
-- **Hugging Face Space with local-only large files:** add `hf-space`; exclude paths via `DEPLOY_EXCLUDE_PATHS`.
+| Scenario | Steps |
+|----------|--------|
+| Vue / frontend / docs | `init-ai` only |
+| Legacy research repo | `init-ai` only |
+| Legacy GPU (e.g. BasicSR) | `init-ai` → `add mlops-gpu` |
+| Modern Python | `init-ai` → `add python-quality` |
+| CI lint on MR | … → `add ci-quality` |
+| HF Space deploy | … → `add hf-space` |
+
+**Legacy GPU tip:** use Dev Container for tests/training (`uv-bootstrap.sh` installs torch). On the **host**, skip `uv sync --dev` and skip `setup-local-hooks.sh` unless you want local lint—avoids downloading torch on every commit.
+
+## Three environments (Python + GPU)
+
+| Environment | Install | Commands |
+|-------------|---------|----------|
+| **Host** (optional) | dev tools only, no torch | `bash scripts/setup-local-hooks.sh` then `.venv/bin/pre-commit` |
+| **Dev Container** | full runtime + dev | Rebuild → `scripts/uv-bootstrap.sh` → `uv run ...` |
+| **CI train** | full runtime + dev | mlops-gpu `train.yml` |
+| **CI quality** | dev (+ runtime if in lock) | ci-quality jobs; default manual + non-blocking |
+
+Do **not** use `uv run pre-commit` on the host for GPU projects—it triggers a full dependency sync including torch.
+
+## Combine GitLab CI (quality + train)
+
+`ci-quality` and `mlops-gpu` each inject a root `.gitlab-ci.yml` for **their own** jobs only. If you add **both**, the second inject overwrites the first—merge manually:
+
+```yaml
+stages:
+  - quality
+  - deploy
+
+variables:
+  FF_USE_FASTZIP: "true"
+  UV_LINK_MODE: copy
+  QUALITY_CI_BLOCKING: "false"   # true = strict quality gate
+
+include:
+  - local: .gitlab/ci/quality.yml
+  - local: .gitlab/ci/train.yml
+```
+
+Set `QUALITY_CI_BLOCKING: "true"` when you want quality jobs to block MR/main automatically.
 
 ## Docs
 

@@ -9,7 +9,6 @@ APPLY=true
 UPDATE_ACTION_SET=false
 ACTION="init"
 PACK_ARG=""
-PROFILE_ARG=""
 PACKS=()
 
 usage() {
@@ -17,23 +16,22 @@ usage() {
 Usage:
   init-ai [--update] [--dry-run|--apply]
   init-ai add <pack> [--update] [--dry-run|--apply]
-  init-ai profile <profile> [--update] [--dry-run|--apply]
 
 Packs:
   core              Cursor / Claude rules and project memory (default)
-  python-quality    Ruff, Pyright, pre-commit, and .gitignore
+  python-quality    Ruff, Pyright, pre-commit config, and python-uv rules
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
-  mlops-gpu         Docker, devcontainer, GitLab GPU training, and smoke test (auto-includes ci-quality)
+  mlops-gpu         Docker, devcontainer, GitLab GPU train CI, and uv-bootstrap
   hf-space          Orphan-repo deploy to Hugging Face Space (git archive + force push)
-
-Profiles:
-  research-gpu      core + mlops-gpu (pulls python-quality and ci-quality automatically)
 
 Modes:
   init              Initialize selected packs in the current project.
   --update          Update selected managed template files.
   --dry-run         Preview changes without writing files.
   --apply           Apply changes. Required when --update is used.
+
+Add packs manually in the order your project needs. See README for pack descriptions
+and how to merge .gitlab-ci.yml when using both ci-quality and mlops-gpu.
 USAGE
 }
 
@@ -54,7 +52,7 @@ select_pack() {
   local pack="$1"
 
   case "${pack}" in
-    core|python-quality|hf-space)
+    core|python-quality|hf-space|mlops-gpu)
       add_pack_once "${pack}"
       ;;
     ci-quality)
@@ -62,29 +60,8 @@ select_pack() {
       add_pack_once "python-quality"
       add_pack_once "ci-quality"
       ;;
-    mlops-gpu)
-      echo "Pack dependency: mlops-gpu also applies ci-quality (which applies python-quality)."
-      select_pack ci-quality
-      add_pack_once "mlops-gpu"
-      ;;
     *)
       echo "Unknown pack: ${pack}" >&2
-      usage >&2
-      exit 1
-      ;;
-  esac
-}
-
-select_profile() {
-  local profile="$1"
-
-  case "${profile}" in
-    research-gpu)
-      select_pack core
-      select_pack mlops-gpu
-      ;;
-    *)
-      echo "Unknown profile: ${profile}" >&2
       usage >&2
       exit 1
       ;;
@@ -101,16 +78,6 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       PACK_ARG="$2"
-      shift 2
-      ;;
-    profile)
-      ACTION="profile"
-      if [[ $# -lt 2 ]]; then
-        echo "Please specify a profile after 'profile'." >&2
-        usage >&2
-        exit 1
-      fi
-      PROFILE_ARG="$2"
       shift 2
       ;;
     --update)
@@ -152,9 +119,6 @@ case "${ACTION}" in
     ;;
   add)
     select_pack "${PACK_ARG}"
-    ;;
-  profile)
-    select_profile "${PROFILE_ARG}"
     ;;
 esac
 
@@ -334,7 +298,7 @@ install_python_quality_tools() {
   echo
   if [[ "${DRY_RUN}" == true ]]; then
     printf '%-8s %s\n' "SKIP" "uv add --dev ruff pyright pre-commit (dry-run)"
-    printf '%-8s %s\n' "SKIP" "uv run pre-commit install + pre-push hook (dry-run)"
+    printf '%-8s %s\n' "SKIP" "local git hooks (run scripts/setup-local-hooks.sh after apply)"
     return
   fi
 
@@ -343,16 +307,13 @@ install_python_quality_tools() {
     return
   fi
 
-  echo "Installing dev dependencies: ruff pyright pre-commit..."
+  echo "Adding dev dependencies to pyproject.toml: ruff pyright pre-commit..."
   uv add --dev ruff pyright pre-commit
 
-  if [[ -d "${TARGET_DIR}/.git" ]]; then
-    echo "Detected a Git repository. Installing pre-commit and pre-push hooks..."
-    uv run pre-commit install
-    uv run pre-commit install --hook-type pre-push
-  else
-    echo "No .git directory found. Skipping Git hook installation."
-  fi
+  echo
+  echo "Dev deps added. Git hooks are not installed automatically."
+  echo "On the host (optional, no torch): bash scripts/setup-local-hooks.sh"
+  echo "In Dev Container / CI: use scripts/uv-bootstrap.sh for full runtime sync."
 }
 
 print_header

@@ -1,15 +1,17 @@
 # CI Quality Pack
 
-`ci-quality` 添加 GitHub Actions 与 GitLab CI 的质量检查模板，不包含 GPU 训练调度。
+`ci-quality` 添加 GitHub Actions 与 GitLab CI 的 **quality** 检查模板，不包含 GPU 训练（train 在 `mlops-gpu` pack）。
 
-**自动依赖**：会同时应用 `python-quality`（注入 Ruff / Pyright / pre-commit 配置，并把 `ruff`、`pyright`、`pre-commit` 写入 `pyproject.toml` dev 组）。这样 CI 里的 `uv sync --dev` + `uv run pyright` 才能在容器内正常工作。
+**自动依赖**：会同时应用 `python-quality`（Ruff / Pyright / pre-commit 配置，以及 `pyproject.toml` dev 组里的 `ruff`、`pyright`、`pre-commit`）。
 
-若目标项目还没有 `pyproject.toml`，会先脚手架生成一个最小的 `pyproject.toml`（`requirements.txt` / `setup.py` 不会被删除或改写）。
+**独立 pack**：不含 Docker / devcontainer / GPU train job。
+
+若目标项目还没有 `pyproject.toml`，会先脚手架生成最小 `pyproject.toml`（`requirements.txt` / `setup.py` 不会被删除或改写）。
 
 包含：
 
 - `.github/workflows/ci.yml`
-- `.gitlab-ci.yml`
+- `.gitlab-ci.yml`（**仅** include `quality.yml`）
 - `.gitlab/ci/quality.yml`
 
 命令：
@@ -19,6 +21,26 @@ init-ai add ci-quality --dry-run
 init-ai add ci-quality --apply
 ```
 
-GitHub Actions 使用 `astral-sh/setup-uv` 和固定 Python 版本。GitLab CI 使用 `workflow: rules`、`include` 分层和基于文件的 cache key。
+## GitLab quality 严格度
 
-如果项目是 BasicSR 这类旧仓库，建议先只用 `core`，等代码结构稳定后再启用本 pack。
+根 `.gitlab-ci.yml` 默认：
+
+```yaml
+QUALITY_CI_BLOCKING: "false"
+```
+
+| 值 | 行为 |
+|----|------|
+| `false`（默认） | MR/main 上 quality job **手动** Play，且 **allow_failure** |
+| `true` | MR/main 上自动跑且阻塞 pipeline |
+
+在 GitLab **Settings → CI/CD → Variables** 可覆盖，或直接改 `.gitlab-ci.yml`。
+
+## 与其他 pack 组合
+
+- 已有 `mlops-gpu` 且也要 quality CI：两个 pack 都 inject 后，**手动合并**根 `.gitlab-ci.yml`（见仓库 README「Combine GitLab CI」）。后 inject 的 pack 会覆盖根文件，需合并两个 `include` 与 `stages`。
+- Legacy 仓库：可不加本 pack；或加但保持 `QUALITY_CI_BLOCKING=false`。
+
+GitHub Actions 使用 `astral-sh/setup-uv`。GitLab CI 使用 `workflow: rules`、`include` 分层和基于文件的 cache key。
+
+如果项目是 BasicSR 这类旧仓库，建议先 `init-ai` + `mlops-gpu`；需要 MR lint 时再加本 pack。

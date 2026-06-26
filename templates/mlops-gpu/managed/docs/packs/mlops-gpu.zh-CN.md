@@ -2,6 +2,8 @@
 
 `mlops-gpu` 添加 Docker、devcontainer、GitLab GPU Runner 训练调度和 smoke test。
 
+**独立 pack**：不含 Ruff/pre-commit 配置（需 `ci-quality` 时自动带上 `python-quality`）；不含 GPU quality CI。需要 MR lint 时请单独 `init-ai add ci-quality --apply`。
+
 包含：
 
 - `Dockerfile`
@@ -9,6 +11,7 @@
 - `.devcontainer/README.md`（Rebuild 前/后操作手册）
 - `.devcontainer/data-mount.env.example`（shell profile 片段，不会自动加载）
 - `.devcontainer/devcontainer.local.json.example`（gitignore 本地挂载备选）
+- `.gitlab-ci.yml`（**仅** include `train.yml`）
 - `.gitlab/ci/train.yml`
 - `train.py`（仅目标项目不存在时创建）
 - `scripts/uv-bootstrap.sh`（devcontainer 与 GitLab GPU job 共用依赖安装逻辑）
@@ -22,7 +25,21 @@ init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 ```
 
-`mlops-gpu` 会自动带上 `ci-quality`（进而带上 `python-quality`），因为 GitLab 的训练 job 需要根 `.gitlab-ci.yml` include 入口，且 quality CI 需要 dev 组里的 `ruff` / `pyright`。
+## 三环境分工（宿主机 vs 容器）
+
+| 环境 | 职责 |
+|------|------|
+| **宿主机** | 可选 `git` + 编辑；**不要** `uv sync --dev` 装 torch。可选 `bash scripts/setup-local-hooks.sh`（需先 add `python-quality`） |
+| **Dev Container** | 全量 runtime + dev：`postCreateCommand` → `scripts/uv-bootstrap.sh` |
+| **GitLab train job** | 同上 bootstrap，跑 `gpu_smoke` / `run_training` |
+
+Legacy GPU 项目（如 BasicSR）推荐：`init-ai` → `add mlops-gpu`；宿主机直接 commit，Rebuild devcontainer 后在容器内训练。
+
+## 与其他 pack 组合
+
+- **只要 GPU**：本 pack 即可（不含 quality CI、不含 ruff hook）
+- **要 CI lint**：另加 `init-ai add ci-quality --apply`，并手动合并根 `.gitlab-ci.yml`（见仓库 README「Combine GitLab CI」）
+- **要本地 hook**：另加 `python-quality`，再 `bash scripts/setup-local-hooks.sh`
 
 训练 Runner 要求：
 
@@ -91,11 +108,12 @@ torch>=2.6.0,<2.7.0
 
 ## Dev Container 基线（inject 后不要删）
 
-- `workspaceMount` + `workspaceFolder=/workspace`：与 Dockerfile `WORKDIR` 一致。
+- `workspaceMount` + `workspaceFolder=/workspace`：只 bind **项目仓库**，与 Dockerfile `WORKDIR` 一致；IDE 中打开 repo 根目录，不要以 `$HOME` 为工作区。
 - `remoteUser` + `updateRemoteUserUID`：避免 bind mount 后文件属主不匹配。
-- `mounts`：`${localEnv:DATA_MOUNT_SOURCE}` → `/data`（Rebuild 前在宿主机 export）。
+- `mounts`：仅 `${localEnv:DATA_MOUNT_SOURCE}` → `/data`（数据集目录）；**禁止**把整个 `$HOME` bind 到 `/home/vscode`（会导致 `.cursor-server` / 缓存冲突，服务器重启后常见）。
 - `initializeCommand`：校验 `DATA_MOUNT_SOURCE` 存在，并用 `ls` 触发 autofs。
 - `containerEnv.DATA_DIR=/data`：应用代码只读此变量 + 相对路径。
+- 可选：Named Volume 只挂 uv 缓存目录（见 `devcontainer.local.json.example` Option F），不要挂整个家目录。
 
 ## 数据挂载工作流
 

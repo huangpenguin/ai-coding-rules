@@ -1,0 +1,11 @@
+{
+  "exclude": [
+    ".venv",
+    "__pycache__",
+    ".git",
+    "basicsr",
+    "experiments",
+    "third_party",
+    "options"
+  ]
+}

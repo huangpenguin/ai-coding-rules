@@ -17,8 +17,14 @@
 # Hidden job（以 . 开头）：只作模板，不会单独执行
 .quality_rules:
   rules:
+    - if: '$QUALITY_CI_BLOCKING == "true" && $CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$QUALITY_CI_BLOCKING == "true" && $CI_COMMIT_BRANCH == "main"'
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
     - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+      allow_failure: true
 
 .quality_base:
   stage: quality

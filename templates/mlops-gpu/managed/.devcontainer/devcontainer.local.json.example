@@ -45,4 +45,18 @@
   // "mounts": [
   //   "source=${localWorkspaceFolder}/../input,target=/data,type=bind"
   // ]
+
+  // Option F (optional): named volume for uv cache only — NOT full $HOME.
+  // Speeds up cold rebuilds without mounting .cursor-server / .cache / .gvfs from host.
+  //
+  // "mounts": [
+  //   "source=${localEnv:DATA_MOUNT_SOURCE},target=/data,type=bind",
+  //   "source=mlops-uv-cache-${localWorkspaceFolderBasename},target=/home/vscode/.cache/uv,type=volume"
+  // ]
+
+  // NEVER do this (breaks Cursor server after reconnect / server restart):
+  //
+  // "mounts": [
+  //   "source=${localEnv:HOME},target=/home/vscode,type=bind"
+  // ]
 }

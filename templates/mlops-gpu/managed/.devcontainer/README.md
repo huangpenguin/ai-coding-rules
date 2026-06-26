@@ -8,10 +8,36 @@ Application code reads **`DATA_DIR`** (fixed to `/data` inside the container) pl
 
 | Layer | Committed to Git | Per-developer |
 |-------|------------------|---------------|
+| Project code | `/workspace` ← `${localWorkspaceFolder}` bind | Open the **repo folder** in IDE, not `$HOME` |
 | Container mount target | `/data` | — |
 | Container env | `DATA_DIR=/data` | — |
 | Host bind source | `${localEnv:DATA_MOUNT_SOURCE}` in devcontainer.json | Each dev exports before Rebuild |
 | Application code | Reads `DATA_DIR` + relative paths | Optional per-dataset overrides |
+
+## Mount strategy (do not mount `$HOME`)
+
+Committed `devcontainer.json` uses **only two bind mounts**:
+
+| Source (host) | Target (container) | Purpose |
+|---------------|-------------------|---------|
+| `${localWorkspaceFolder}` | `/workspace` | Project code + `.venv` (created by `uv-bootstrap.sh`) |
+| `${localEnv:DATA_MOUNT_SOURCE}` | `/data` | Datasets only |
+
+**Never** bind the entire host `$HOME` into the container (for example `source=${localEnv:HOME},target=/home/vscode`). That drags in `.cursor-server`, `.cache`, `.gvfs`, SSH agent sockets, and other host state. After a server restart or reconnect, Cursor server install and extension caches often conflict or break.
+
+| Anti-pattern | Why it fails |
+|--------------|--------------|
+| Mount `$HOME` → `/home/vscode` | `.cursor-server` / IDE cache conflicts across rebuilds |
+| Mount `$HOME` → `/workspace` | Opens home as workspace; same conflict, plus permission noise |
+| Symlink `.venv` to a path under host `$HOME` outside the repo | Bind mount + UID remap can corrupt the venv |
+
+**Correct patterns for persistence**
+
+- **Code**: bind only the git repo (`workspaceMount` — default).
+- **Data**: bind one dataset directory via `DATA_MOUNT_SOURCE` → `/data`.
+- **Caches (optional)**: use a **named Docker volume** for a single cache dir, not all of `$HOME`. Example in [`devcontainer.local.json.example`](devcontainer.local.json.example) Option F.
+
+`remote.containers.copyGitConfig` is set to `false` so Cursor does not try to copy host gitconfig via a broken home-path resolution (see lessons-learned).
 
 ## A. One-time host prerequisites (new GPU machine)
 
