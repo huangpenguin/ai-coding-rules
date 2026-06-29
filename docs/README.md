@@ -10,6 +10,7 @@ This folder keeps only **template-repository** guides that are not injected.
 |------|-----|
 | core | [templates/core/managed/docs/packs/core.zh-CN.md](../templates/core/managed/docs/packs/core.zh-CN.md) |
 | python-quality | [templates/python-quality/managed/docs/packs/python-quality.zh-CN.md](../templates/python-quality/managed/docs/packs/python-quality.zh-CN.md) |
+| pre-commit-hooks | [templates/pre-commit-hooks/managed/docs/packs/pre-commit-hooks.zh-CN.md](../templates/pre-commit-hooks/managed/docs/packs/pre-commit-hooks.zh-CN.md) |
 | ci-quality | [templates/ci-quality/managed/docs/packs/ci-quality.zh-CN.md](../templates/ci-quality/managed/docs/packs/ci-quality.zh-CN.md) |
 | mlops-gpu | [templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md](../templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md) |
 | hf-space | [templates/hf-space/managed/docs/packs/hf-space.zh-CN.md](../templates/hf-space/managed/docs/packs/hf-space.zh-CN.md) |

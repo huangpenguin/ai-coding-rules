@@ -19,7 +19,8 @@ Usage:
 
 Packs:
   core              Cursor / Claude rules and project memory (default)
-  python-quality    Ruff, Pyright, pre-commit config, and python-uv rules
+  python-quality    Ruff, Pyright, and python-uv rules
+  pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
   mlops-gpu         Docker, devcontainer, GitLab GPU train CI, and uv-bootstrap
   hf-space          Orphan-repo deploy to Hugging Face Space (git archive + force push)
@@ -54,6 +55,11 @@ select_pack() {
   case "${pack}" in
     core|python-quality|hf-space|mlops-gpu)
       add_pack_once "${pack}"
+      ;;
+    pre-commit-hooks)
+      echo "Pack dependency: pre-commit-hooks also applies python-quality."
+      add_pack_once "python-quality"
+      add_pack_once "pre-commit-hooks"
       ;;
     ci-quality)
       echo "Pack dependency: ci-quality also applies python-quality."
@@ -238,11 +244,23 @@ apply_pack() {
   copy_tree_files "${pack_dir}/preserve" "${TARGET_DIR}" preserve
 }
 
-quality_pack_selected() {
+python_quality_pack_selected() {
   local pack
 
   for pack in "${PACKS[@]}"; do
     if [[ "${pack}" == "python-quality" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+pre_commit_hooks_pack_selected() {
+  local pack
+
+  for pack in "${PACKS[@]}"; do
+    if [[ "${pack}" == "pre-commit-hooks" ]]; then
       return 0
     fi
   done
@@ -289,7 +307,7 @@ ensure_pyproject_for_quality() {
 }
 
 install_python_quality_tools() {
-  if ! quality_pack_selected; then
+  if ! python_quality_pack_selected; then
     return
   fi
 
@@ -297,8 +315,7 @@ install_python_quality_tools() {
 
   echo
   if [[ "${DRY_RUN}" == true ]]; then
-    printf '%-8s %s\n' "SKIP" "uv add --dev ruff pyright pre-commit (dry-run)"
-    printf '%-8s %s\n' "SKIP" "local git hooks (run scripts/setup-local-hooks.sh after apply)"
+    printf '%-8s %s\n' "SKIP" "uv add --dev ruff pyright (dry-run)"
     return
   fi
 
@@ -307,13 +324,39 @@ install_python_quality_tools() {
     return
   fi
 
-  echo "Adding dev dependencies to pyproject.toml: ruff pyright pre-commit..."
-  uv add --dev ruff pyright pre-commit
+  echo "Adding dev dependencies to pyproject.toml: ruff pyright..."
+  uv add --dev ruff pyright
 
   echo
-  echo "Dev deps added. Git hooks are not installed automatically."
-  echo "On the host (optional, no torch): bash scripts/setup-local-hooks.sh"
+  echo "Dev deps added (ruff, pyright). Git hooks are a separate pack: init-ai add pre-commit-hooks"
   echo "In Dev Container / CI: use scripts/uv-bootstrap.sh for full runtime sync."
+}
+
+install_pre_commit_hooks_tools() {
+  if ! pre_commit_hooks_pack_selected; then
+    return
+  fi
+
+  ensure_pyproject_for_quality
+
+  echo
+  if [[ "${DRY_RUN}" == true ]]; then
+    printf '%-8s %s\n' "SKIP" "uv add --dev pre-commit (dry-run)"
+    printf '%-8s %s\n' "SKIP" "local git hooks (run scripts/setup-local-hooks.sh after apply)"
+    return
+  fi
+
+  if [[ ! -f "${TARGET_DIR}/pyproject.toml" ]]; then
+    echo "pyproject.toml is still missing. Skipping pre-commit dev dependency." >&2
+    return
+  fi
+
+  echo "Adding dev dependency to pyproject.toml: pre-commit..."
+  uv add --dev pre-commit
+
+  echo
+  echo "pre-commit added. Hooks are not installed automatically."
+  echo "On the host (optional, no torch): bash scripts/setup-local-hooks.sh"
 }
 
 print_header
@@ -323,6 +366,7 @@ for pack in "${PACKS[@]}"; do
 done
 
 install_python_quality_tools
+install_pre_commit_hooks_tools
 
 if [[ "${DRY_RUN}" == true ]]; then
   echo

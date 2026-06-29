@@ -15,7 +15,8 @@ templates/<pack>/
 | Pack | Purpose | Standalone? |
 |------|---------|-------------|
 | [core](core/) | Default: Cursor rules, `CLAUDE.md`, `.cursorrules`, memory | Yes |
-| [python-quality](python-quality/) | Ruff, Pyright, pre-commit config, `setup-local-hooks.sh` | Yes |
+| [python-quality](python-quality/) | Ruff, Pyright, python-uv rules | Yes |
+| [pre-commit-hooks](pre-commit-hooks/) | Optional local Git hooks (Ruff + Pyright pre-push) | Pulls in python-quality only |
 | [ci-quality](ci-quality/) | GitHub/GitLab **quality** CI | Pulls in python-quality only |
 | [mlops-gpu](mlops-gpu/) | Docker, devcontainer, **train** CI, uv-bootstrap | Yes |
 | [hf-space](hf-space/) | Hugging Face Space deploy | Yes |
@@ -30,6 +31,7 @@ init-ai                              # core only
 init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 init-ai add ci-quality --apply       # also applies python-quality
+init-ai add pre-commit-hooks --apply # also applies python-quality; optional git hooks
 init-ai add mlops-gpu --update --apply
 ```
 

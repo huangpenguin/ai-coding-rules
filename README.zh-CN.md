@@ -27,12 +27,13 @@ init-ai
 | Pack | 命令 | 注入内容 | **不包含** |
 |------|------|----------|------------|
 | **core** | `init-ai` | Cursor/Claude 规则、项目记忆 | Python、CI、Docker |
-| **python-quality** | `init-ai add python-quality` | Ruff、Pyright、pre-commit 配置、python-uv 规则 | CI、GPU、自动 git hook |
-| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（会自动带上 python-quality） |
+| **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
+| **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
+| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（会自动带上 python-quality，不含 pre-commit） |
 | **mlops-gpu** | `init-ai add mlops-gpu` | Docker、devcontainer、**train** CI、uv-bootstrap | quality CI、ruff（独立 pack） |
 | **hf-space** | `init-ai add hf-space` | HF Space 部署 | — |
 
-唯一自动依赖：`ci-quality` → `python-quality`（CI 需要同一套 ruff/pyright 配置）。
+唯一自动依赖：`ci-quality` → `python-quality`；`pre-commit-hooks` → `python-quality`。均**不会**自动安装 Git hook。
 
 建议先预览：
 
@@ -50,20 +51,21 @@ init-ai add mlops-gpu --apply
 | Legacy GPU（如 BasicSR） | `init-ai` → `add mlops-gpu` |
 | 现代 Python | `init-ai` → `add python-quality` |
 | MR 上要 CI lint | … → `add ci-quality` |
+| 要本地 commit/push hook | … → `add pre-commit-hooks`（可选） |
 | HF Space 部署 | … → `add hf-space` |
 
-**Legacy GPU 提示：** 在 Dev Container 里跑测试/训练（`uv-bootstrap.sh` 装 torch）。**宿主机**不要 `uv sync --dev`，也不要跑 `setup-local-hooks.sh`，除非确实需要本地 lint。
+**Legacy GPU 提示：** 在 Dev Container 里跑测试/训练（`uv-bootstrap.sh` 装 torch）。**宿主机**不要 `uv sync --dev`。本地 Git hook 为可选：`init-ai add pre-commit-hooks` 后再 `setup-local-hooks.sh`。
 
 ## 三环境分工
 
 | 环境 | 装什么 | 用什么 |
 |------|--------|--------|
-| **宿主机**（可选） | 仅 dev 工具，无 torch | `bash scripts/setup-local-hooks.sh`，之后 `.venv/bin/pre-commit` |
+| **宿主机**（可选） | 仅 dev 工具，无 torch | `.venv/bin/ruff` / `.venv/bin/pyright`；hook 见 `pre-commit-hooks` pack |
 | **Dev Container** | runtime + dev | Rebuild → `scripts/uv-bootstrap.sh` → `uv run ...` |
 | **CI train** | runtime + dev | mlops-gpu 的 `train.yml` |
 | **CI quality** | dev（+ runtime 若 lock 含） | ci-quality job；默认 manual + 不阻塞 |
 
-宿主机上对 GPU 项目 **不要用** `uv run pre-commit`（会隐式 sync 全量依赖含 torch）。
+宿主机上对 GPU 项目 **不要用** `uv run`（会隐式 sync 全量依赖含 torch）。
 
 ## 合并 GitLab CI（quality + train）
 

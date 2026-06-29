@@ -7,11 +7,17 @@ if [[ ! -f pyproject.toml ]]; then
   exit 1
 fi
 
+if [[ ! -f .pre-commit-config.yaml ]]; then
+  echo "ERROR: .pre-commit-config.yaml not found. Run init-ai add pre-commit-hooks first." >&2
+  exit 1
+fi
+
 echo "Syncing dev tools only (--only-dev --no-install-project)..."
 uv sync --only-dev --no-install-project
 
 if [[ ! -x .venv/bin/pre-commit ]]; then
   echo "ERROR: .venv/bin/pre-commit not found after sync." >&2
+  echo "Run init-ai add pre-commit-hooks --apply to add the pre-commit dev dependency." >&2
   exit 1
 fi
 

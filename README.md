@@ -27,12 +27,13 @@ This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`
 | Pack | Command | What it adds | Does **not** add |
 |------|---------|--------------|------------------|
 | **core** | `init-ai` | Cursor/Claude rules, project memory | Python, CI, Docker |
-| **python-quality** | `init-ai add python-quality` | Ruff, Pyright, pre-commit config, python-uv rules | CI, GPU, auto git hooks |
-| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality) |
+| **python-quality** | `init-ai add python-quality` | Ruff, Pyright, python-uv rules | CI, GPU, pre-commit hooks |
+| **pre-commit-hooks** | `init-ai add pre-commit-hooks` | Optional local Git hooks (Ruff on commit, Pyright on push) | CI, GPU (auto-includes python-quality) |
+| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality, not pre-commit) |
 | **mlops-gpu** | `init-ai add mlops-gpu` | Docker, devcontainer, **train** CI, uv-bootstrap | quality CI, ruff (standalone pack) |
 | **hf-space** | `init-ai add hf-space` | HF Space deploy script | — |
 
-Only **one** automatic dependency: `ci-quality` → `python-quality` (CI needs the same ruff/pyright configs).
+Automatic pack dependencies: `ci-quality` → `python-quality`; `pre-commit-hooks` → `python-quality`. Neither installs Git hooks automatically.
 
 Preview before apply:
 
@@ -50,20 +51,21 @@ init-ai add mlops-gpu --apply
 | Legacy GPU (e.g. BasicSR) | `init-ai` → `add mlops-gpu` |
 | Modern Python | `init-ai` → `add python-quality` |
 | CI lint on MR | … → `add ci-quality` |
+| Local commit/push hooks | … → `add pre-commit-hooks` (optional) |
 | HF Space deploy | … → `add hf-space` |
 
-**Legacy GPU tip:** use Dev Container for tests/training (`uv-bootstrap.sh` installs torch). On the **host**, skip `uv sync --dev` and skip `setup-local-hooks.sh` unless you want local lint—avoids downloading torch on every commit.
+**Legacy GPU tip:** use Dev Container for tests/training (`uv-bootstrap.sh` installs torch). On the **host**, skip `uv sync --dev`. Local Git hooks are optional: `init-ai add pre-commit-hooks` then `setup-local-hooks.sh`.
 
 ## Three environments (Python + GPU)
 
 | Environment | Install | Commands |
 |-------------|---------|----------|
-| **Host** (optional) | dev tools only, no torch | `bash scripts/setup-local-hooks.sh` then `.venv/bin/pre-commit` |
+| **Host** (optional) | dev tools only, no torch | `.venv/bin/ruff` / `.venv/bin/pyright`; hooks via `pre-commit-hooks` pack |
 | **Dev Container** | full runtime + dev | Rebuild → `scripts/uv-bootstrap.sh` → `uv run ...` |
 | **CI train** | full runtime + dev | mlops-gpu `train.yml` |
 | **CI quality** | dev (+ runtime if in lock) | ci-quality jobs; default manual + non-blocking |
 
-Do **not** use `uv run pre-commit` on the host for GPU projects—it triggers a full dependency sync including torch.
+Do **not** use `uv run` on the host for GPU projects—it triggers a full dependency sync including torch.
 
 ## Combine GitLab CI (quality + train)
 

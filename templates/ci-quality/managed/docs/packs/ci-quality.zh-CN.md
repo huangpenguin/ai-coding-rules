@@ -2,7 +2,9 @@
 
 `ci-quality` 添加 GitHub Actions 与 GitLab CI 的 **quality** 检查模板，不包含 GPU 训练（train 在 `mlops-gpu` pack）。
 
-**自动依赖**：会同时应用 `python-quality`（Ruff / Pyright / pre-commit 配置，以及 `pyproject.toml` dev 组里的 `ruff`、`pyright`、`pre-commit`）。
+**自动依赖**：会同时应用 `python-quality`（Ruff / Pyright 配置，以及 `pyproject.toml` dev 组里的 `ruff`、`pyright`）。
+
+**不含** pre-commit Git hook；本地 hook 需单独 `init-ai add pre-commit-hooks`。
 
 **独立 pack**：不含 Docker / devcontainer / GPU train job。
 
@@ -21,6 +23,8 @@ init-ai add ci-quality --dry-run
 init-ai add ci-quality --apply
 ```
 
+CI 直接执行 `uv run ruff` / `uv run pyright`，不依赖 pre-commit。
+
 ## GitLab quality 严格度
 
 根 `.gitlab-ci.yml` 默认：
@@ -38,9 +42,8 @@ QUALITY_CI_BLOCKING: "false"
 
 ## 与其他 pack 组合
 
-- 已有 `mlops-gpu` 且也要 quality CI：两个 pack 都 inject 后，**手动合并**根 `.gitlab-ci.yml`（见仓库 README「Combine GitLab CI」）。后 inject 的 pack 会覆盖根文件，需合并两个 `include` 与 `stages`。
+- 已有 `mlops-gpu` 且也要 quality CI：两个 pack 都 inject 后，**手动合并**根 `.gitlab-ci.yml`（见仓库 README「Combine GitLab CI」）。
+- 要本地 Git hook：另加 `init-ai add pre-commit-hooks --apply`。
 - Legacy 仓库：可不加本 pack；或加但保持 `QUALITY_CI_BLOCKING=false`。
 
 GitHub Actions 使用 `astral-sh/setup-uv`。GitLab CI 使用 `workflow: rules`、`include` 分层和基于文件的 cache key。
-
-如果项目是 BasicSR 这类旧仓库，建议先 `init-ai` + `mlops-gpu`；需要 MR lint 时再加本 pack。

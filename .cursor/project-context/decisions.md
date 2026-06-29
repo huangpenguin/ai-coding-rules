@@ -7,19 +7,20 @@
 - **No profiles** (e.g. no `research-gpu`). Users add packs manually; root README documents each pack and common composition paths.
 - Optional packs (each addable via `init-ai add <pack>` unless noted):
   - `core`: Language-agnostic Cursor / Claude rules and project memory. Safe for Vue, frontend, docs, and mixed repos.
-  - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, pre-commit config, `setup-local-hooks.sh`, and `.gitignore`. Does **not** auto-install git hooks. May run `uv init` and `uv add --dev ...` — do not use on non-Python projects.
+  - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, and `.gitignore`. Does **not** add pre-commit. May run `uv init` and `uv add --dev ruff pyright` — do not use on non-Python projects.
+  - `pre-commit-hooks`: Optional local Git hooks. Auto-includes `python-quality`. Adds `.pre-commit-config.yaml`, `setup-local-hooks.sh`, and `uv add --dev pre-commit`. Does **not** auto-install hooks.
   - `ci-quality`: GitHub Actions and GitLab **quality** CI. Auto-includes `python-quality` only. Root `.gitlab-ci.yml` is quality-only; default `QUALITY_CI_BLOCKING=false` (manual + allow_failure).
   - `mlops-gpu`: Docker, devcontainer, GitLab **train** CI, `uv-bootstrap.sh`. **Standalone** — does not auto-include ci-quality or python-quality.
   - `hf-space`: Hugging Face Space deploy via `git archive` + orphan repo + force push.
   - `mlflow-experimental`: reserved for future MLflow tracking experiments.
 - When both `ci-quality` and `mlops-gpu` are injected, the user merges root `.gitlab-ci.yml` manually (both `quality.yml` and `train.yml` includes). Later inject overwrites earlier root file.
-- When `python-quality` runs and the target has no `pyproject.toml`, `init-ai` scaffolds a minimal one with `uv init` before `uv add --dev ruff pyright pre-commit`. Legacy `requirements.txt` / `setup.py` files are left unchanged.
+- When `python-quality` runs and the target has no `pyproject.toml`, `init-ai` scaffolds a minimal one with `uv init` before `uv add --dev ruff pyright`. Legacy `requirements.txt` / `setup.py` files are left unchanged. `pre-commit-hooks` adds `pre-commit` separately.
 - Python-specific Cursor rules live in `python-quality`, not `core`.
 - Root-level Docker/MLOps files are template material under `templates/mlops-gpu/`, not at repository root.
 
 ## Three-Environment Model (Python + GPU)
 
-- **Host (optional)**: `uv sync --only-dev --no-install-project` via `scripts/setup-local-hooks.sh`; use `.venv/bin/pre-commit` / `.venv/bin/pyright`. Do not use `uv run` on host for GPU projects (implicit full sync including torch).
+- **Host (optional)**: `uv sync --only-dev --no-install-project` via `scripts/setup-local-hooks.sh` when `pre-commit-hooks` pack is used; use `.venv/bin/pre-commit` / `.venv/bin/pyright`. Do not use `uv run` on host for GPU projects (implicit full sync including torch).
 - **Dev Container / CI train**: `scripts/uv-bootstrap.sh` — full runtime + dev.
 - **CI quality**: `ci-quality` jobs; optional strict gate via `QUALITY_CI_BLOCKING=true`.
 
