@@ -22,7 +22,7 @@ Packs:
   python-quality    Ruff, Pyright, and python-uv rules
   pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
-  mlops-gpu         Docker Compose, GitLab GPU train CI, and uv-bootstrap
+  mlops-gpu         Docker Compose, thin Dev Container, GitLab GPU train CI, uv-bootstrap
   hf-space          Orphan-repo deploy to Hugging Face Space (git archive + force push)
 
 Modes:

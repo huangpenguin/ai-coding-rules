@@ -30,7 +30,7 @@ init-ai
 | **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（会自动带上 python-quality，不含 pre-commit） |
-| **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose、**train** CI、uv-bootstrap、ML Agent 规则 | quality CI、ruff（独立 pack） |
+| **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose、薄 Dev Container、**train** CI、uv-bootstrap | quality CI、ruff（独立 pack） |
 | **hf-space** | `init-ai add hf-space` | HF Space 部署 | — |
 
 唯一自动依赖：`ci-quality` → `python-quality`；`pre-commit-hooks` → `python-quality`。均**不会**自动安装 Git hook。
@@ -54,14 +54,14 @@ init-ai add mlops-gpu --apply
 | 要本地 commit/push hook | … → `add pre-commit-hooks`（可选） |
 | HF Space 部署 | … → `add hf-space` |
 
-**Legacy GPU 提示：** 用 `docker compose run --rm train python ...` 跑训练（宿主机禁止直接 `python`）。本地 Git hook 为可选：`init-ai add pre-commit-hooks` 后再 `setup-local-hooks.sh`。
+**Legacy GPU 提示：** `docker compose run --rm train uv run python ...`（宿主机禁止 ML）。细节见 inject 后 `docs/packs/mlops-gpu.zh-CN.md`。
 
 ## 三环境分工
 
 | 环境 | 装什么 | 用什么 |
 |------|--------|--------|
 | **宿主机**（可选） | 仅 dev 工具，无 torch | `.venv/bin/ruff` / `.venv/bin/pyright`；hook 见 `pre-commit-hooks` pack |
-| **Docker Compose** | 容器内 GPU runtime | `docker compose run --rm train python ...` |
+| **Docker Compose / IDE** | 容器内 GPU + `.venv` | `docker compose run --rm train uv run python ...` 或 Reopen in Container |
 | **CI train** | runtime + dev | mlops-gpu 的 `train.yml` |
 | **CI quality** | dev（+ runtime 若 lock 含） | ci-quality job；默认 manual + 不阻塞 |
 
@@ -86,35 +86,9 @@ include:
   - local: .gitlab/ci/train.yml
 ```
 
-## Docker Executor GPU 快速落地
+## GPU 快速落地
 
-`mlops-gpu` 面向 GitLab self-hosted **Docker executor** GPU Runner。默认 GPU 镜像：
-
-```text
-pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
-```
-
-### 1. GPU 服务器端准备
-
-```bash
-nvidia-smi
-docker info
-docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
-```
-
-Runner `config.toml` 关键项：`executor = "docker"`、`gpus = "all"`、`volumes = ["/cache", "/mnt/data:/data:ro"]`（路径按机器调整）。
-
-### 2. 启用 mlops-gpu
-
-```bash
-init-ai add mlops-gpu --apply
-```
-
-推送后在 GitLab 手动 Play `gpu_smoke`，再 `run_training`。
-
-### 3. GitHub Actions 边界
-
-GPU 训练默认走 GitLab `train.yml`；GitHub Actions quality 属于 `ci-quality` pack，不默认接 GPU runner。
+`init-ai add mlops-gpu --apply` 后，本地与 CI 使用同一镜像栈 `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`。操作细节（compose、Runner、数据路径）见 inject 后的 **`docs/packs/mlops-gpu.zh-CN.md`**。
 
 ## 文档入口
 

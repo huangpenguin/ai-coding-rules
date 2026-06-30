@@ -10,7 +10,7 @@
   - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, and `.gitignore`. Does **not** add pre-commit. May run `uv init` and `uv add --dev ruff pyright` — do not use on non-Python projects.
   - `pre-commit-hooks`: Optional local Git hooks. Auto-includes `python-quality`. Adds `.pre-commit-config.yaml`, `setup-local-hooks.sh`, and `uv add --dev pre-commit`. Does **not** auto-install hooks.
   - `ci-quality`: GitHub Actions and GitLab **quality** CI. Auto-includes `python-quality` only. Root `.gitlab-ci.yml` is quality-only; default `QUALITY_CI_BLOCKING=false` (manual + allow_failure).
-  - `mlops-gpu`: Docker Compose local GPU env, GitLab **train** CI, `uv-bootstrap.sh`, ML agent rules (`.cursor/rules/mlops-docker-compose.mdc`). **Standalone** — does not auto-include ci-quality or python-quality.
+  - `mlops-gpu`: `docker-compose.yml` + `Dockerfile` (env source of truth), thin `.devcontainer/devcontainer.json` (IDE attach only), GitLab **train** CI, `uv-bootstrap.sh` (postCreate + CI), `mlops-docker-compose.mdc`. **Standalone** — does not auto-include ci-quality or python-quality. Single injected pack doc: `docs/packs/mlops-gpu.zh-CN.md`. No wrapper scripts.
   - `hf-space`: Hugging Face Space deploy via `git archive` + orphan repo + force push.
   - `mlflow-experimental`: reserved for future MLflow tracking experiments.
 - When both `ci-quality` and `mlops-gpu` are injected, the user merges root `.gitlab-ci.yml` manually (both `quality.yml` and `train.yml` includes). Later inject overwrites earlier root file.
@@ -21,7 +21,7 @@
 ## Three-Environment Model (Python + GPU)
 
 - **Host (optional)**: `uv sync --only-dev --no-install-project` via `scripts/setup-local-hooks.sh` when `pre-commit-hooks` pack is used; use `.venv/bin/pre-commit` / `.venv/bin/pyright`. Do not use `uv run` on host for GPU projects (implicit full sync including torch).
-- **Docker Compose (local)**: `docker compose run --rm train ...` — GPU training/debug; never run ML Python on bare-metal host.
+- **Docker Compose + Dev Container (local)**: `docker compose build` / `docker compose run --rm train uv run ...` or Reopen in Container; `postCreate` runs `uv-bootstrap.sh`. Never run ML Python on bare-metal host.
 - **CI train**: `scripts/uv-bootstrap.sh` in GitLab GPU jobs.
 - **CI quality**: `ci-quality` jobs; optional strict gate via `QUALITY_CI_BLOCKING=true`.
 
@@ -39,10 +39,11 @@
 - The Docker executor GPU Runner must set `[runners.docker] gpus = "all"` and should mount shared datasets through runner volumes such as `/mnt/data:/data:ro`.
 - `mlops-gpu` defaults to a GPU job container image (`MLOPS_GPU_IMAGE`) instead of running `docker build` / `docker run` inside CI.
 - The default GPU job image is `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`.
-- Python package management should live in target project files (`pyproject.toml` + `uv.lock` preferred; `requirements.txt` only as a migration path) and be synced by `uv-bootstrap.sh` in GitLab train jobs; local dev uses `docker-compose.yml` (NGC image or `build: .`).
+- **Single validated image stack** everywhere: `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel` — local `build: .`, CI `MLOPS_GPU_IMAGE`, same Dockerfile `FROM`. No separate NGC/local default.
+- Python package management in `pyproject.toml` + `uv.lock` (or legacy `requirements.txt`); synced by `uv-bootstrap.sh` into `/workspace/.venv` in the same container image.
 - Current validated GPU stack: `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`, `torch 2.6.x + cu124`, cuDNN 9.x, NVIDIA V100 (`sm_70`, 32GB).
 - Target project Python dependencies should pin torch to the validated minor series, e.g. `torch>=2.6.0,<2.7.0`; legacy installs use cu124 index via `uv-bootstrap.sh`.
-- **Single bootstrap script**: `templates/mlops-gpu/managed/scripts/uv-bootstrap.sh` for GitLab GPU before_script (local dev uses Docker Compose, not uv-bootstrap).
+- **Single bootstrap script**: `templates/mlops-gpu/managed/scripts/uv-bootstrap.sh` for Dev Container postCreate and GitLab GPU before_script.
 - BasicSR / legacy GPU: `init-ai` then `init-ai add mlops-gpu`; add `ci-quality` and `python-quality` only when needed.
 
 ## Git Remotes (maintainer checkout)

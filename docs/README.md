@@ -1,10 +1,10 @@
 # Documentation Index
 
-Pack and operational docs live under **`templates/<pack>/managed/docs/`**. That is the canonical source: `init-ai add <pack> --apply` copies them into target projects.
+Pack docs live under **`templates/<pack>/managed/docs/`** and are copied into target projects by `init-ai add <pack> --apply`.
 
-This folder keeps only **template-repository** guides that are not injected.
+This folder keeps **template-repository-only** guides (not injected).
 
-## Packs (canonical paths in this repo)
+## Packs
 
 | Pack | Doc |
 |------|-----|
@@ -15,22 +15,6 @@ This folder keeps only **template-repository** guides that are not injected.
 | mlops-gpu | [templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md](../templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md) |
 | hf-space | [templates/hf-space/managed/docs/packs/hf-space.zh-CN.md](../templates/hf-space/managed/docs/packs/hf-space.zh-CN.md) |
 | mlflow-experimental | [templates/mlflow-experimental/managed/docs/packs/mlflow-experimental.zh-CN.md](../templates/mlflow-experimental/managed/docs/packs/mlflow-experimental.zh-CN.md) |
-
-## Docker / MLOps (mlops-gpu pack)
-
-| Topic | Doc |
-|-------|-----|
-| Docker Compose quickstart | [templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md) |
-| Docker quickstart | [templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md) |
-| CUDA / driver matrix | [templates/mlops-gpu/managed/docs/docker/cuda-driver-matrix.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/cuda-driver-matrix.zh-CN.md) |
-| Customize Dockerfile | [templates/mlops-gpu/managed/docs/docker/customize-dockerfile.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/customize-dockerfile.zh-CN.md) |
-
-## Use cases (injected with mlops-gpu)
-
-| Topic | Doc |
-|-------|-----|
-| Data mount env isolation | [templates/mlops-gpu/managed/docs/use-cases/data-mount-env-isolation.md](../templates/mlops-gpu/managed/docs/use-cases/data-mount-env-isolation.md) |
-| GPU Runner workflow | [templates/mlops-gpu/managed/docs/use-cases/gpu-runner.zh-CN.md](../templates/mlops-gpu/managed/docs/use-cases/gpu-runner.zh-CN.md) |
 
 ## Template repository only (not injected)
 

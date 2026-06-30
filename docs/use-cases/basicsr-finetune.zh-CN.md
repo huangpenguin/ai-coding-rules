@@ -34,6 +34,7 @@ python basicsr/train.py -opt options/train/your_config.yml
 需要 Docker / GPU Runner 时再执行：
 
 ```bash
-init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
+docker compose build
+docker compose run --rm train uv run python basicsr/train.py -opt options/train/your_config.yml
 ```

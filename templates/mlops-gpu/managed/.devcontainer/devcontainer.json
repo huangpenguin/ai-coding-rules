@@ -1,0 +1,21 @@
+{
+  "name": "MLOps GPU",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "train",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "postCreateCommand": "bash scripts/uv-bootstrap.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "remote.containers.copyGitConfig": false
+      }
+    }
+  }
+}

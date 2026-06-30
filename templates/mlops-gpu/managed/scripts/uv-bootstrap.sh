@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Shared project venv bootstrap for GitLab GPU train jobs (local dev uses docker-compose.yml).
+# Shared project venv bootstrap for Dev Container postCreate and GitLab GPU before_script.
+# Local CLI (no IDE): docker compose run --rm train bash scripts/uv-bootstrap.sh
 # Keeps legacy requirements.txt, semi-migrated pyproject.toml, and uv.lock paths aligned.
 set -euo pipefail
 

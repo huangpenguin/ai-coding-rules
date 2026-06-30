@@ -30,7 +30,7 @@ This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`
 | **python-quality** | `init-ai add python-quality` | Ruff, Pyright, python-uv rules | CI, GPU, pre-commit hooks |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | Optional local Git hooks (Ruff on commit, Pyright on push) | CI, GPU (auto-includes python-quality) |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality, not pre-commit) |
-| **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose, **train** CI, uv-bootstrap, ML agent rules | quality CI, ruff (standalone pack) |
+| **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose, thin Dev Container, **train** CI, uv-bootstrap | quality CI, ruff (standalone pack) |
 | **hf-space** | `init-ai add hf-space` | HF Space deploy script | — |
 
 Automatic pack dependencies: `ci-quality` → `python-quality`; `pre-commit-hooks` → `python-quality`. Neither installs Git hooks automatically.
@@ -54,14 +54,14 @@ init-ai add mlops-gpu --apply
 | Local commit/push hooks | … → `add pre-commit-hooks` (optional) |
 | HF Space deploy | … → `add hf-space` |
 
-**Legacy GPU tip:** run training via `docker compose run --rm train python ...` (never bare-metal `python` on the host). Local Git hooks are optional: `init-ai add pre-commit-hooks` then `setup-local-hooks.sh`.
+**Legacy GPU tip:** `docker compose run --rm train uv run python ...` (never bare-metal ML on the host). See injected `docs/packs/mlops-gpu.zh-CN.md` for full ops.
 
 ## Three environments (Python + GPU)
 
 | Environment | Install | Commands |
 |-------------|---------|----------|
 | **Host** (optional) | dev tools only, no torch | `.venv/bin/ruff` / `.venv/bin/pyright`; hooks via `pre-commit-hooks` pack |
-| **Docker Compose** | GPU runtime in container | `docker compose run --rm train python ...` |
+| **Docker Compose / IDE** | GPU runtime + `.venv` in container | `docker compose run --rm train uv run python ...` or Reopen in Container |
 | **CI train** | full runtime + dev | mlops-gpu `train.yml` |
 | **CI quality** | dev (+ runtime if in lock) | ci-quality jobs; default manual + non-blocking |
 

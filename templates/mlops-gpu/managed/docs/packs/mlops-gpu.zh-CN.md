@@ -1,105 +1,265 @@
 # MLOps GPU Pack
 
-`mlops-gpu` 添加 Docker Compose 本地 GPU 环境、GitLab GPU Runner 训练调度和 smoke test。
+`mlops-gpu` 添加 **Docker Compose + 薄 Dev Container** 本地 GPU 环境、GitLab GPU Runner 训练调度与 smoke test。
 
-**独立 pack**：不含 Ruff/pre-commit 配置；不含 GPU quality CI。需要 MR lint 时请单独 `init-ai add ci-quality --apply`。
+**独立 pack**：不含 Ruff / pre-commit；不含 GPU quality CI。需要 MR lint 时 `init-ai add ci-quality --apply`。
 
-包含：
+## 包含文件
 
-- `docker-compose.yml`（本地训练/调试的声明式环境）
-- `Dockerfile`（可选：固化依赖后 `build: .`）
-- `.cursor/rules/mlops-docker-compose.mdc`（Agent 禁止在宿主机直接跑 ML 代码）
-- `.gitlab-ci.yml`（**仅** include `train.yml`）
-- `.gitlab/ci/train.yml`
-- `train.py`（仅目标项目不存在时创建）
-- `scripts/uv-bootstrap.sh`（GitLab GPU job 依赖安装）
-- `pyproject-uv-pytorch.snippet.toml`
-- Docker / GPU 相关文档
-
-命令：
+| 文件 | 作用 |
+|------|------|
+| `docker-compose.yml` | 环境真源：GPU、挂载、端口、shm |
+| `Dockerfile` | `build: .` 基底（与 CI 同一镜像 tag） |
+| `.devcontainer/devcontainer.json` | IDE 接入 compose `train`（不重复 GPU/mount） |
+| `.cursor/rules/mlops-docker-compose.mdc` | Agent：禁止宿主机跑 ML |
+| `scripts/uv-bootstrap.sh` | postCreate + GitLab job 依赖安装 |
+| `.gitlab-ci.yml` + `.gitlab/ci/train.yml` | GPU 训练 CI |
+| `train.py` | smoke（目标无则创建） |
 
 ```bash
 init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 ```
 
-## 本地 GPU 环境（Docker Compose）
+## 固定环境栈（本地 = CI 同一基底）
 
-**不再使用 Dev Container。** 本地开发与训练通过 `docker-compose.yml`：
+| 层 | 默认 |
+|----|------|
+| 镜像 | `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel` |
+| 本地 | `docker-compose.yml` → `build: .` → 上述 Dockerfile |
+| CI | `MLOPS_GPU_IMAGE` = 同一 tag |
+| PyTorch | `torch 2.6.x + cu124`（项目 `.venv` 内由 `uv-bootstrap.sh` 安装） |
+| cuDNN | 9.x |
+| 已验证 GPU | NVIDIA V100，`sm_70`，32GB |
+
+本地 `build: .` 与 CI 直接拉镜像是**同一基底**的两种启动方式；项目依赖统一装进 `/workspace/.venv`（`uv-bootstrap.sh`），不是第三套环境。镜像内 conda PyTorch 仅作参考，**命令走 `.venv`**（`uv run`）。
+
+目标宿主：Ubuntu 24.04 + NVIDIA driver `570-server` 或更高。**宿主机 driver 必须支持容器内 CUDA runtime**。
 
 ```bash
-# 一次性：启动可 attach 的环境（可选）
-docker compose up -d train
-
-# 跑脚本（推荐）
-docker compose run --rm train python train.py
-
-# 交互 shell
-docker compose run --rm train bash
+nvidia-smi
+docker info
+docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
 ```
 
-默认镜像：`nvcr.io/nvidia/pytorch:24.01-py3`。按项目需要改 `image:`，或改为 `build: .` 使用仓库 `Dockerfile`。
+torch 约束（`requirements.txt` / `pyproject.toml`）：
 
-TensorBoard 等 UI：compose 已映射 `6006:6006`。
+```text
+torch>=2.6.0,<2.7.0
+```
+
+不要写 `torch>=1.7` 等过宽约束。cu124 index 由 `uv-bootstrap.sh` 处理 legacy requirements；迁 lock 后可在 `pyproject.toml` 加：
+
+```toml
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+```
 
 ## 三环境分工
 
 | 环境 | 职责 |
 |------|------|
-| **宿主机** | Git、编辑、Cursor；**禁止**直接 `python` / `pip install` 跑 ML |
-| **Docker Compose (`train`)** | 本地 GPU 训练/评估/调试 |
-| **GitLab train job** | CI 训练：`scripts/uv-bootstrap.sh` + `gpu_smoke` / `run_training` |
+| **宿主机** | Git、编辑、Cursor；**禁止** `python` / `pip` / `uv run` 跑 ML |
+| **Compose / Dev Container** | 本地 GPU 训练；IDE 用 Reopen in Container |
+| **GitLab train job** | `uv-bootstrap.sh` + `gpu_smoke` / `run_training` |
 
-Legacy GPU 项目（如 BasicSR）推荐：`init-ai` → `add mlops-gpu`；宿主机只 commit，训练用 `docker compose run --rm train python ...`。
+## 本地开发
+
+### 构建与运行
+
+```bash
+docker compose build
+
+# 跑 smoke / 训练（推荐）
+docker compose run --rm train uv run python train.py
+
+# 交互 shell
+docker compose run --rm train bash
+
+# 可选：后台常驻
+docker compose up -d train
+docker compose exec train bash
+```
+
+CLI 首次若无 `.venv`（未 Reopen in Container）：
+
+```bash
+docker compose run --rm train bash scripts/uv-bootstrap.sh
+```
+
+### IDE：Reopen in Container
+
+1. `docker compose build`
+2. Cursor：**Reopen in Container**（attach `train` service）
+3. `postCreateCommand` 自动执行 `bash scripts/uv-bootstrap.sh`
+4. 解释器：`/workspace/.venv/bin/python`
+
+验证：
+
+```bash
+nvidia-smi
+uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+uv run python train.py
+```
+
+TensorBoard：compose 已映射 `6006:6006`，浏览器访问 `http://localhost:6006`。
+
+### 不用 Compose 文件时（调试用）
+
+```bash
+docker build -t my-project-gpu .
+docker run --rm --gpus all --shm-size 16g \
+  -v "$(pwd):/workspace" \
+  -v /mnt/data:/data:ro \
+  -e DATA_DIR=/data \
+  -w /workspace \
+  my-project-gpu bash -lc "bash scripts/uv-bootstrap.sh && uv run python train.py"
+```
+
+## 改数据盘路径
+
+编辑 `docker-compose.yml` 中 `train.volumes` 的第二行：
+
+```yaml
+    volumes:
+      - .:/workspace
+      - /你的宿主机路径:/data:ro
+```
+
+容器内统一 `DATA_DIR=/data`。应用代码只读 `DATA_DIR` + 相对路径，**不要**在 Python 里写 `/home/...` 等宿主机路径。
+
+```python
+from pathlib import Path
+import os
+
+data_root = Path(os.environ.get("DATA_DIR", "/data"))
+dataset_path = data_root / "my_dataset"
+```
+
+验证：
+
+```bash
+docker compose run --rm train bash -lc 'echo "DATA_DIR=$DATA_DIR"; ls -la "$DATA_DIR"'
+docker compose run --rm train uv run python train.py
+```
+
+**GitLab CI**：容器内同样 `DATA_DIR=/data`；宿主机路径在 Runner `config.toml` 的 `volumes` 配置（见下文），不在 `.gitlab-ci.yml` 写死。
+
+常见错误：配置了 `DATA_DIR` 但 compose 无对应 volume；在 `/workspace` 下 symlink 到仓库外路径。
+
+## 依赖与 uv-bootstrap
+
+`scripts/uv-bootstrap.sh` 用于 **Dev Container postCreate** 与 **GitLab GPU before_script**。
+
+| 项目状态 | 行为 |
+|----------|------|
+| `pyproject.toml` + `uv.lock` | `uv sync --frozen --dev` |
+| 半迁移（空 `dependencies` + `requirements.txt`） | requirements（cu124）+ dev 工具 |
+| 仅 `requirements.txt` | `uv venv` + requirements + 可选 `uv pip install -e .` |
+| 仅 `pyproject.toml` | `uv sync --dev` |
+| 无依赖文件 | 使用镜像基底 |
+
+**不要**在半迁移/legacy 项目上只跑 `uv sync --dev` 就认为 torch 等已装好。
+
+迁移到 lock：`uv lock && uv sync --frozen --dev`，提交 `uv.lock`，再删 `requirements.txt`。
+
+### 固化依赖进 Dockerfile（稳定后）
+
+bind mount 会盖住 `/workspace/.venv`，镜像内依赖应放 `/opt/mlops-venv`：
+
+```dockerfile
+ENV UV_PROJECT_ENVIRONMENT=/opt/mlops-venv
+ENV PATH="/opt/mlops-venv/bin:${PATH}"
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+```
+
+系统包示例：`libgl1`、`libglib2.0-0`、`ffmpeg`、`git-lfs`（按项目需要）。
+
+## 改训练命令
+
+GitLab CI 变量（Settings → CI/CD → Variables 或 `.gitlab-ci.yml`）：
+
+```bash
+TRAIN_COMMAND="python train.py"
+SMOKE_COMMAND="python train.py"
+# 或项目入口，例如：
+TRAIN_COMMAND="python basicsr/train.py -opt options/train/xxx.yml"
+```
+
+有 lock 后也可用：`TRAIN_COMMAND="uv run python train.py"`。
+
+## GitLab GPU Runner
+
+要求：self-hosted；executor `docker`；tags `linux`, `docker`, `gpu`；`gpus = "all"`。
+
+注册：
+
+```bash
+sudo gitlab-runner register \
+  --url https://gitlab.com \
+  --token glrt-xxxx \
+  --executor docker \
+  --docker-image pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
+```
+
+`/etc/gitlab-runner/config.toml` 示例：
+
+```toml
+concurrent = 1
+
+[[runners]]
+  executor = "docker"
+  [runners.docker]
+    image = "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
+    gpus = "all"
+    shm_size = 17179869184
+    volumes = ["/cache", "/mnt/data:/data:ro"]
+```
+
+- `concurrent = 1`：单台 GPU 服务器一次一个 GPU job。
+- `/mnt/data:/data:ro` 左侧必须是 **Runner 宿主机本地路径**，不要写 NFS export 字符串（如 `192.168.x.x:/mnt/...`）。
+
+触发：Pipeline 手动 Play `gpu_smoke` → `run_training`；或 commit message 含 `[run train]`。
+
+手动验证与 CI 相同镜像：
+
+```bash
+docker run --rm --gpus all --shm-size 16g \
+  -v "$(pwd):/workspace" \
+  -w /workspace \
+  pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel \
+  bash -lc "bash scripts/uv-bootstrap.sh && python train.py"
+```
+
+默认变量：
+
+```yaml
+MLOPS_GPU_IMAGE: "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
+DATA_DIR: "/data"
+```
 
 ## 与其他 pack 组合
 
-- **只要 GPU**：本 pack 即可
-- **要 CI lint**：另加 `init-ai add ci-quality --apply`，手动合并根 `.gitlab-ci.yml`（见仓库 README）
-- **要本地 Git hook**：`init-ai add pre-commit-hooks --apply`，再 `bash scripts/setup-local-hooks.sh`
+| 需求 | 命令 |
+|------|------|
+| 只要 GPU | 本 pack |
+| CI lint | `init-ai add ci-quality --apply`；手动合并 `.gitlab-ci.yml`（见模板仓库 README） |
+| 本地 Git hook | `init-ai add pre-commit-hooks --apply` |
+| Ruff 规则 | `init-ai add python-quality --apply` |
 
-## Agent 执行协议
+Legacy GPU（如 BasicSR）：`init-ai` → `add mlops-gpu`；训练用 `docker compose run --rm train uv run python ...`。
 
-inject 后会添加 `.cursor/rules/mlops-docker-compose.mdc`（`alwaysApply: true`）：
+## Agent 规则
 
-- 宿主机无全局 ML Python 环境
-- 所有 ML 脚本通过 `docker compose run --rm train python <script.py>`
-- 临时依赖在容器内 `pip install`；永久依赖改 `Dockerfile` + `build: .`
+见 `.cursor/rules/mlops-docker-compose.mdc`（`alwaysApply: true`）。
 
-## 训练 Runner 要求
+## GitHub Actions
 
-- self-hosted Runner，tags: `linux`, `docker`, `gpu`
-- executor: `docker`，`gpus = "all"`
-- 数据集通过 runner volumes，例如 `/mnt/data:/data:ro`
-
-## 项目 Python 环境（CI）
-
-GitLab GPU job 使用 **`uv run` + `/workspace/.venv`**，由 `scripts/uv-bootstrap.sh` 同步依赖（与本地 compose 的 pip/镜像路径可并存，CI 独立）。
-
-| 项目状态 | bootstrap 行为 |
-|----------|----------------|
-| `pyproject.toml` + `uv.lock` | `uv sync --frozen --dev` |
-| 半迁移 + `requirements.txt` | cu124 index + requirements |
-| 仅 `requirements.txt` | `uv venv` + requirements |
-
-本地 compose 默认用 NGC 预装 PyTorch 镜像；CI 仍可用 `MLOPS_GPU_IMAGE`（默认 `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`）。
-
-## 数据挂载
-
-在 `docker-compose.yml` 的 `volumes` 增加宿主机数据路径，例如：
-
-```yaml
-volumes:
-  - .:/workspace
-  - /mnt/data:/workspace/data:ro
-```
-
-应用代码读 `DATA_DIR` 或 `/workspace/data`（见 [数据路径环境变量隔离](../use-cases/data-mount-env-isolation.md)）。
-
-GitLab 侧：`DATA_DIR=/data`，由 Runner `config.toml` volumes 挂载。
-
-更多步骤见 [Docker quickstart](../docker/quickstart.zh-CN.md)。
-
-## GitHub Actions 边界
-
-GPU 训练走 GitLab `train.yml`；GitHub Actions quality 属于 `ci-quality` pack。
+GPU 训练走 GitLab `train.yml`；GitHub quality 属于 `ci-quality` pack。
