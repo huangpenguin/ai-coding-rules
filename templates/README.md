@@ -18,7 +18,7 @@ templates/<pack>/
 | [python-quality](python-quality/) | Ruff, Pyright, python-uv rules | Yes |
 | [pre-commit-hooks](pre-commit-hooks/) | Optional local Git hooks (Ruff + Pyright pre-push) | Pulls in python-quality only |
 | [ci-quality](ci-quality/) | GitHub/GitLab **quality** CI | Pulls in python-quality only |
-| [mlops-gpu](mlops-gpu/) | Docker, devcontainer, **train** CI, uv-bootstrap | Yes |
+| [mlops-gpu](mlops-gpu/) | Docker Compose, **train** CI, uv-bootstrap, ML agent rules | Yes |
 | [hf-space](hf-space/) | Hugging Face Space deploy | Yes |
 | [mlflow-experimental](mlflow-experimental/) | Reserved / experimental MLflow docs | Yes |
 

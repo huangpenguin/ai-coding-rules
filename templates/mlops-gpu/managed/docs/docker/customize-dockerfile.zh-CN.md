@@ -5,10 +5,10 @@
 原则：
 
 - **默认先用基础镜像跑通**：新仓库先用 `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel` 跑 `gpu_smoke`。
-- **Dockerfile 是稳定项目镜像入口**：依赖稳定后，Dev Container、手动 `docker run` 和 `MLOPS_GPU_IMAGE` 可复用同一个项目镜像。
+- **Dockerfile 是稳定项目镜像入口**：依赖稳定后，Docker Compose（`build: .`）、手动 `docker run` 和 `MLOPS_GPU_IMAGE` 可复用同一个项目镜像。
 - **包声明进仓库**：Python 依赖放在 `pyproject.toml` + `uv.lock`，旧项目可暂用 `requirements.txt`。
 - **不要改 Runner 宿主机环境**：GPU Runner 宿主机只安装 Docker、NVIDIA driver、NVIDIA Container Toolkit、GitLab Runner。
-- **不要依赖 Dev Container 的 `postCreateCommand` 做 CI 环境**：CI 与 devcontainer 共用 `scripts/uv-bootstrap.sh`，但各自在独立容器内执行；不要把依赖只装在宿主机或 Runner 上。
+- **本地用 Compose、CI 用 uv-bootstrap**：本地 `docker-compose.yml` 默认拉 NGC 镜像；GitLab train job 用 `scripts/uv-bootstrap.sh`。不要把依赖只装在宿主机或 Runner 上。
 
 ## 1. 新仓库没有环境文件时
 
@@ -58,7 +58,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 为什么固化项目镜像时不用默认的 `/workspace/.venv`：
 
-- Dev Container 或手动 `docker run` 常把项目代码挂载到 `/workspace`
+- Docker Compose 或手动 `docker run` 常把项目代码挂载到 `/workspace`
 - 如果镜像构建时把 `.venv` 放在 `/workspace/.venv`，运行时 bind mount 会把它盖掉
 - 所以镜像内依赖环境建议放到 `/opt/mlops-venv`
 
@@ -89,7 +89,7 @@ SMOKE_COMMAND="uv run python train.py"
 
 ## 3. 旧项目：从 requirements.txt 迁移
 
-旧仓库如果只有 `requirements.txt`，或 inject 后出现 **半迁移**（`pyproject.toml` 存在但 `dependencies = []`，同时保留 `requirements.txt`），devcontainer 与 GitLab GPU job 都会执行同一脚本：
+旧仓库如果只有 `requirements.txt`，或 inject 后出现 **半迁移**（`pyproject.toml` 存在但 `dependencies = []`，同时保留 `requirements.txt`），GitLab GPU job 会执行：
 
 ```bash
 bash scripts/uv-bootstrap.sh

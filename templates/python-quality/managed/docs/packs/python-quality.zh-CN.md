@@ -26,7 +26,7 @@ init-ai add python-quality --apply
 | 环境 | 装什么 | 用什么 |
 |------|--------|--------|
 | **宿主机**（可选） | 仅 dev 工具（ruff / pyright） | `.venv/bin/ruff`、`.venv/bin/pyright`（勿 `uv run` on GPU 项目） |
-| **Dev Container** | runtime + dev | `scripts/uv-bootstrap.sh`（mlops-gpu pack） |
+| **Docker Compose** | runtime + dev in container | `docker compose run --rm train ...`（mlops-gpu pack） |
 | **CI quality** | dev（+ runtime 若 lock 含） | `ci-quality` pack 的 GitLab/GitHub job |
 | **CI train** | runtime + dev | `mlops-gpu` pack 的 `train.yml` |
 
@@ -49,7 +49,7 @@ bash scripts/setup-local-hooks.sh
 - 若目标项目**已有** `pyproject.toml`：执行 `uv add --dev ruff pyright`（不自动 sync）。
 - 若目标项目**没有** `pyproject.toml`：先用 `uv init` 生成最小 `pyproject.toml`，再安装上述 dev 依赖。
 - 若只有 `requirements.txt` / `setup.py`：这些文件**不会被修改**。
-- **半迁移状态**（空 `dependencies` + `requirements.txt`）：宿主机勿 `uv sync --dev`；runtime 由 Dev Container / CI 的 `uv-bootstrap.sh` 处理。
+- **半迁移状态**（空 `dependencies` + `requirements.txt`）：宿主机勿 `uv sync --dev`；runtime 由 Docker Compose 或 CI 的 `uv-bootstrap.sh` 处理。
 
 ## Legacy 老代码
 

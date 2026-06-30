@@ -22,7 +22,7 @@ Packs:
   python-quality    Ruff, Pyright, and python-uv rules
   pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
-  mlops-gpu         Docker, devcontainer, GitLab GPU train CI, and uv-bootstrap
+  mlops-gpu         Docker Compose, GitLab GPU train CI, and uv-bootstrap
   hf-space          Orphan-repo deploy to Hugging Face Space (git archive + force push)
 
 Modes:
@@ -329,7 +329,7 @@ install_python_quality_tools() {
 
   echo
   echo "Dev deps added (ruff, pyright). Git hooks are a separate pack: init-ai add pre-commit-hooks"
-  echo "In Dev Container / CI: use scripts/uv-bootstrap.sh for full runtime sync."
+  echo "In Docker Compose / CI: use docker compose run for local ML; uv-bootstrap.sh for GitLab train jobs."
 }
 
 install_pre_commit_hooks_tools() {

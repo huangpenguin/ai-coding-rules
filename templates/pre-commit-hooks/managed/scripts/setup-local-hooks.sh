@@ -27,4 +27,4 @@ fi
 echo
 echo "Local hooks ready."
 echo "  Use .venv/bin/pre-commit — not uv run pre-commit (uv run auto-syncs runtime deps)."
-echo "  Dev Container / CI train: use scripts/uv-bootstrap.sh for full runtime sync."
+echo "  Docker Compose / CI train: docker compose run for local ML; uv-bootstrap.sh for GitLab."

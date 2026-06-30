@@ -1,0 +1,23 @@
+---
+description: ML training execution via Docker Compose — never run Python on bare-metal host
+alwaysApply: true
+---
+
+# 1. ENVIRONMENT AWARENESS
+
+- You are operating directly on a bare-metal Linux host via SSH.
+- The host machine does NOT have global Python ML libraries installed.
+- NEVER run `pip install` or standard `python script.py` directly in the host terminal.
+
+# 2. EXECUTION PROTOCOL (via Docker Compose)
+
+- ALWAYS execute Python scripts, ML training, or evaluation using the `docker-compose.yml` configuration.
+- To run a script, use this exact command format:
+  `docker compose run --rm train python <script_name.py>`
+- This ensures GPU access, volume mounts, and port forwarding are automatically applied based on the YAML file.
+
+# 3. DEPENDENCY MANAGEMENT
+
+- If you need to install temporary packages for a quick test, run it inside the container:
+  `docker compose run --rm train bash -c "pip install -r requirements.txt && python <script_name.py>"`
+- For permanent dependency changes, instruct the user to create/modify a `Dockerfile` and update the `docker-compose.yml` to `build: .` instead of pulling an image.

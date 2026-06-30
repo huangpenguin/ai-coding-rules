@@ -6,7 +6,7 @@
 
 **不含** pre-commit Git hook；本地 hook 需单独 `init-ai add pre-commit-hooks`。
 
-**独立 pack**：不含 Docker / devcontainer / GPU train job。
+**独立 pack**：不含 Docker Compose / GPU train job。
 
 若目标项目还没有 `pyproject.toml`，会先脚手架生成最小 `pyproject.toml`（`requirements.txt` / `setup.py` 不会被删除或改写）。
 

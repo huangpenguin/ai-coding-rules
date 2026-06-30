@@ -1,0 +1,21 @@
+services:
+  train:
+    # You can change this base image based on the specific project needs
+    image: nvcr.io/nvidia/pytorch:24.01-py3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      # Standard mount: sync the current codebase to /workspace
+      - .:/workspace
+      # TODO for future projects: add external data mounts here if needed, e.g., - /mnt/data:/workspace/data
+    working_dir: /workspace
+    ports:
+      # Port forwarding for TensorBoard or other UI tools
+      - "6006:6006"
+    # Keep the container alive if we want to enter it manually, or allow it to be run ad-hoc
+    command: sleep infinity

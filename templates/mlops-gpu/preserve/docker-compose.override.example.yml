@@ -1,0 +1,10 @@
+# Example local override (copy to docker-compose.override.yml — gitignored).
+# Per-developer data mount; do not commit host paths.
+
+services:
+  train:
+    volumes:
+      - .:/workspace
+      - /mnt/data:/workspace/data:ro
+    environment:
+      DATA_DIR: /workspace/data

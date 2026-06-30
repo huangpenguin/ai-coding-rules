@@ -30,7 +30,7 @@ init-ai
 | **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（会自动带上 python-quality，不含 pre-commit） |
-| **mlops-gpu** | `init-ai add mlops-gpu` | Docker、devcontainer、**train** CI、uv-bootstrap | quality CI、ruff（独立 pack） |
+| **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose、**train** CI、uv-bootstrap、ML Agent 规则 | quality CI、ruff（独立 pack） |
 | **hf-space** | `init-ai add hf-space` | HF Space 部署 | — |
 
 唯一自动依赖：`ci-quality` → `python-quality`；`pre-commit-hooks` → `python-quality`。均**不会**自动安装 Git hook。
@@ -54,14 +54,14 @@ init-ai add mlops-gpu --apply
 | 要本地 commit/push hook | … → `add pre-commit-hooks`（可选） |
 | HF Space 部署 | … → `add hf-space` |
 
-**Legacy GPU 提示：** 在 Dev Container 里跑测试/训练（`uv-bootstrap.sh` 装 torch）。**宿主机**不要 `uv sync --dev`。本地 Git hook 为可选：`init-ai add pre-commit-hooks` 后再 `setup-local-hooks.sh`。
+**Legacy GPU 提示：** 用 `docker compose run --rm train python ...` 跑训练（宿主机禁止直接 `python`）。本地 Git hook 为可选：`init-ai add pre-commit-hooks` 后再 `setup-local-hooks.sh`。
 
 ## 三环境分工
 
 | 环境 | 装什么 | 用什么 |
 |------|--------|--------|
 | **宿主机**（可选） | 仅 dev 工具，无 torch | `.venv/bin/ruff` / `.venv/bin/pyright`；hook 见 `pre-commit-hooks` pack |
-| **Dev Container** | runtime + dev | Rebuild → `scripts/uv-bootstrap.sh` → `uv run ...` |
+| **Docker Compose** | 容器内 GPU runtime | `docker compose run --rm train python ...` |
 | **CI train** | runtime + dev | mlops-gpu 的 `train.yml` |
 | **CI quality** | dev（+ runtime 若 lock 含） | ci-quality job；默认 manual + 不阻塞 |
 

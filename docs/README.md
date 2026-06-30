@@ -20,7 +20,7 @@ This folder keeps only **template-repository** guides that are not injected.
 
 | Topic | Doc |
 |-------|-----|
-| Dev Container runbook | [templates/mlops-gpu/managed/.devcontainer/README.md](../templates/mlops-gpu/managed/.devcontainer/README.md) |
+| Docker Compose quickstart | [templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md) |
 | Docker quickstart | [templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/quickstart.zh-CN.md) |
 | CUDA / driver matrix | [templates/mlops-gpu/managed/docs/docker/cuda-driver-matrix.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/cuda-driver-matrix.zh-CN.md) |
 | Customize Dockerfile | [templates/mlops-gpu/managed/docs/docker/customize-dockerfile.zh-CN.md](../templates/mlops-gpu/managed/docs/docker/customize-dockerfile.zh-CN.md) |

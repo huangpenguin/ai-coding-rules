@@ -35,7 +35,7 @@ dist/
 .DS_Store
 .idea/
 .vscode/
-.devcontainer/devcontainer.local.json
+docker-compose.override.yml
 
 # Notebooks
 .ipynb_checkpoints/
