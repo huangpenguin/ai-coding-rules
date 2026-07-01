@@ -9,10 +9,11 @@
 # - runner executor: docker
 # - runner tags: linux, docker, gpu
 # - /etc/gitlab-runner/config.toml: [runners.docker] gpus = "all"
-# - 数据盘建议由 runner volumes 挂载，例如 /mnt/data:/data:ro
+# - 数据盘: /mnt/data:/data:ro
+# - 训练产出（推荐）: /mnt/home:/home:rw（NFS，checkpoint 落盘，job 结束后保留）
 #
-# 本模板不在 CI 脚本里执行 docker build / docker run；项目依赖由 job 内 uv 同步，
-# 或者后续改用已经构建好并推送到 registry 的项目镜像。
+# 大 checkpoint 写到 Runner 持久盘（scripts/ci_storage.py 规划路径），
+# 小文件摘要复制到 workspace 后打成 GitLab Artifacts（短期备份，非主存储）。
 # =============================================================================
 
 variables:
@@ -20,8 +21,12 @@ variables:
   UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
   UV_LINK_MODE: copy
   DATA_DIR: "/data"
+  MLOPS_STORAGE_USER: "${GITLAB_USER_LOGIN}"
+  TRAIN_RUN_NAME: "smoke_linear"
   SMOKE_COMMAND: "python train.py"
   TRAIN_COMMAND: "python train.py"
+  MLOPS_ARTIFACTS_DIR: "results/mlops_train"
+  MLOPS_ARTIFACTS_EXPIRE: "14 days"
 
 .gpu_docker_base:
   stage: deploy
@@ -50,6 +55,7 @@ variables:
       echo "Runner tags: ${CI_RUNNER_TAGS:-unknown}"
       echo "GPU image: ${MLOPS_GPU_IMAGE}"
       echo "DATA_DIR: ${DATA_DIR}"
+      echo "MLOPS_STORAGE_USER: ${MLOPS_STORAGE_USER:-<unset>}"
 
       if ! command -v nvidia-smi >/dev/null 2>&1; then
         echo "ERROR: nvidia-smi not found inside the job container." >&2
@@ -98,8 +104,55 @@ variables:
           raise SystemExit("CUDA is not available inside the GitLab Docker executor job container")
       PY
 
+      if [[ -f scripts/ci_storage.py ]]; then
+        echo "== CI storage layout =="
+        eval "$(python scripts/ci_storage.py prepare --write-markers --latest-symlink --emit-shell)"
+        echo "TRAIN_EXPERIMENTS_ROOT=${TRAIN_EXPERIMENTS_ROOT}"
+        echo "TRAIN_TB_LOGGER_ROOT=${TRAIN_TB_LOGGER_ROOT}"
+      else
+        echo "WARNING: scripts/ci_storage.py not found; outputs default to ./experiments in ephemeral workspace." >&2
+      fi
+
+.gpu_collect_artifacts:
+  after_script:
+    - |
+      set -euo pipefail
+
+      artifact_dir="${MLOPS_ARTIFACTS_DIR}/${CI_JOB_NAME}"
+      mkdir -p "${artifact_dir}"
+
+      if [[ -f .ci_storage_host_hint ]]; then
+        cp .ci_storage_host_hint "${artifact_dir}/storage_host_hint.txt"
+      fi
+      if [[ -f .ci_experiments_root ]]; then
+        cp .ci_experiments_root "${artifact_dir}/experiments_root.txt"
+        experiments_root="$(tr -d '\n' < .ci_experiments_root)"
+        summary_path="${experiments_root}/${TRAIN_RUN_NAME}/logs/train_summary.json"
+        if [[ -f "${summary_path}" ]]; then
+          cp "${summary_path}" "${artifact_dir}/train_summary.json"
+        fi
+      fi
+
+      local_summary="experiments/${TRAIN_RUN_NAME}/logs/train_summary.json"
+      if [[ -f "${local_summary}" ]]; then
+        cp "${local_summary}" "${artifact_dir}/train_summary.workspace.json"
+      fi
+
+      echo "Artifact bundle prepared under ${artifact_dir}"
+      find "${artifact_dir}" -type f | sort || true
+  artifacts:
+    when: always
+    expire_in: "$MLOPS_ARTIFACTS_EXPIRE"
+    paths:
+      - results/mlops_train/
+      - .ci_experiments_root
+      - .ci_tb_logger_root
+      - .ci_storage_host_hint
+
 gpu_smoke:
-  extends: .gpu_docker_base
+  extends:
+    - .gpu_docker_base
+    - .gpu_collect_artifacts
   timeout: 30m
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
@@ -109,7 +162,9 @@ gpu_smoke:
     - bash -lc "${SMOKE_COMMAND}"
 
 run_training:
-  extends: .gpu_docker_base
+  extends:
+    - .gpu_docker_base
+    - .gpu_collect_artifacts
   timeout: 12h
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /\[run train\]/'

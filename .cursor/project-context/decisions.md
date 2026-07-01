@@ -10,7 +10,7 @@
   - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, and `.gitignore`. Does **not** add pre-commit. May run `uv init` and `uv add --dev ruff pyright` — do not use on non-Python projects.
   - `pre-commit-hooks`: Optional local Git hooks. Auto-includes `python-quality`. Adds `.pre-commit-config.yaml`, `setup-local-hooks.sh`, and `uv add --dev pre-commit`. Does **not** auto-install hooks.
   - `ci-quality`: GitHub Actions and GitLab **quality** CI. Auto-includes `python-quality` only. Root `.gitlab-ci.yml` is quality-only; default `QUALITY_CI_BLOCKING=false` (manual + allow_failure).
-  - `mlops-gpu`: `docker-compose.yml` + `Dockerfile` (env source of truth), thin `.devcontainer/devcontainer.json` (IDE attach only), GitLab **train** CI, `uv-bootstrap.sh` (postCreate + CI), `mlops-docker-compose.mdc`. **Standalone** — does not auto-include ci-quality or python-quality. Single injected pack doc: `docs/packs/mlops-gpu.zh-CN.md`. No wrapper scripts.
+  - `mlops-gpu`: `docker-compose.yml` + `Dockerfile` (env source of truth), thin `.devcontainer/devcontainer.json` (IDE attach only), GitLab **train** CI, `uv-bootstrap.sh` + `ci_storage.py` (persistent CI outputs), `mlops-docker-compose.mdc`. **Standalone** — does not auto-include ci-quality or python-quality. Single injected pack doc: `docs/packs/mlops-gpu.zh-CN.md`. No wrapper scripts.
   - `hf-space`: Hugging Face Space deploy via `git archive` + orphan repo + force push.
   - `mlflow-experimental`: reserved for future MLflow tracking experiments.
 - When both `ci-quality` and `mlops-gpu` are injected, the user merges root `.gitlab-ci.yml` manually (both `quality.yml` and `train.yml` includes). Later inject overwrites earlier root file.
@@ -22,7 +22,7 @@
 
 - **Host (optional)**: `uv sync --only-dev --no-install-project` via `scripts/setup-local-hooks.sh` when `pre-commit-hooks` pack is used; use `.venv/bin/pre-commit` / `.venv/bin/pyright`. Do not use `uv run` on host for GPU projects (implicit full sync including torch).
 - **Docker Compose + Dev Container (local)**: `docker compose build` / `docker compose run --rm train uv run ...` or Reopen in Container; `postCreate` runs `uv-bootstrap.sh`. Never run ML Python on bare-metal host.
-- **CI train**: `scripts/uv-bootstrap.sh` in GitLab GPU jobs.
+- **CI train**: `scripts/uv-bootstrap.sh` + `scripts/ci_storage.py` in GitLab GPU jobs; large checkpoints on NFS `/home` (or `.ci_storage/` fallback), small summaries via GitLab Artifacts.
 - **CI quality**: `ci-quality` jobs; optional strict gate via `QUALITY_CI_BLOCKING=true`.
 
 ## Documentation Layout

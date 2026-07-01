@@ -13,8 +13,9 @@
 | `.devcontainer/devcontainer.json` | IDE 接入 compose `train`（不重复 GPU/mount） |
 | `.cursor/rules/mlops-docker-compose.mdc` | Agent：禁止宿主机跑 ML |
 | `scripts/uv-bootstrap.sh` | postCreate + GitLab job 依赖安装 |
+| `scripts/ci_storage.py` | CI job 训练产出落盘路径规划（NFS / fallback） |
 | `.gitlab-ci.yml` + `.gitlab/ci/train.yml` | GPU 训练 CI |
-| `train.py` | smoke（目标无则创建） |
+| `train.py` | GPU 训练 smoke：真 backward + checkpoint（目标无则创建） |
 
 ```bash
 init-ai add mlops-gpu --dry-run
@@ -66,7 +67,7 @@ torch = { index = "pytorch-cu124" }
 |------|------|
 | **宿主机** | Git、编辑、Cursor；**禁止** `python` / `pip` / `uv run` 跑 ML |
 | **Compose / Dev Container** | 本地 GPU 训练；IDE 用 Reopen in Container |
-| **GitLab train job** | `uv-bootstrap.sh` + `gpu_smoke` / `run_training` |
+| **GitLab train job** | `uv-bootstrap.sh` + `ci_storage.py` + `gpu_smoke` / `run_training` |
 
 ## 本地开发
 
@@ -195,6 +196,61 @@ TRAIN_COMMAND="python basicsr/train.py -opt options/train/xxx.yml"
 
 有 lock 后也可用：`TRAIN_COMMAND="uv run python train.py"`。
 
+### BasicSR / 真实训练项目
+
+将 `TRAIN_COMMAND` 换成项目入口，并通过 CLI 或环境变量把实验目录指到 CI 持久盘，例如：
+
+```bash
+TRAIN_COMMAND='python basicsr/train.py -opt options/train/xxx.yml --force_yml path:experiments_root=${TRAIN_EXPERIMENTS_ROOT}'
+```
+
+`before_script` 里 `ci_storage.py prepare` 会导出 `TRAIN_EXPERIMENTS_ROOT`、`TRAIN_TB_LOGGER_ROOT`。本地开发不设这些变量时，`train.py` 默认写 `./experiments`。
+
+## CI 训练产出落盘
+
+GitLab job 的 `CI_PROJECT_DIR` 是**临时 checkout**，容器销毁后默认不保留大 checkpoint。本 pack 采用**双轨**：
+
+| 轨道 | 路径 | 用途 |
+|------|------|------|
+| **主存储** | NFS：`/home/{user}/mlops_storage/ci_outputs/{PipelineID}/` | checkpoint、TB log；SSH 直接查看 |
+| **副存储** | workspace `results/mlops_train/` → GitLab Artifacts | 小文件摘要（`train_summary.json`、路径 hint），默认 14 天 |
+
+`scripts/ci_storage.py` 在 `before_script` 执行：
+
+```bash
+eval "$(python scripts/ci_storage.py prepare --write-markers --latest-symlink --emit-shell)"
+```
+
+行为摘要：
+
+1. 按优先级选可写根：`/home/{user}/mlops_storage` → `/mnt/home/...` → `/cache/...` → 仓库内 `.ci_storage/`（fallback）
+2. 创建 `ci_outputs/{CI_PIPELINE_ID}/experiments` 与 `tb_logger`
+3. 导出 `TRAIN_EXPERIMENTS_ROOT` 等环境变量
+4. 写 marker 文件（`.ci_experiments_root` 等）供 `after_script` 收集 artifacts
+5. 更新 `ci_outputs/latest` 软链，便于 SSH `tail` / TensorBoard
+
+默认 `train.py` 会：在 GPU 上跑短训练循环、写 `checkpoints/latest.pt` 与 `logs/train_summary.json`。
+
+**Runner 推荐 volumes**（在只读数据盘之外加可写 home）：
+
+```toml
+volumes = ["/cache", "/mnt/data:/data:ro", "/mnt/home:/home:rw"]
+```
+
+设置 `MLOPS_STORAGE_USER`（或与 NFS 账号对齐的 `CST_STORAGE_USER`）为 Runner 上的 Unix 用户名。
+
+`.gitignore` 建议追加（若已有 `python-quality` 的 `.gitignore`，手动合并）：
+
+```gitignore
+experiments/
+tb_logger/
+.ci_storage/
+.ci_experiments_root
+.ci_tb_logger_root
+.ci_storage_host_hint
+results/mlops_train/
+```
+
 ## GitLab GPU Runner
 
 要求：self-hosted；executor `docker`；tags `linux`, `docker`, `gpu`；`gpus = "all"`。
@@ -220,11 +276,12 @@ concurrent = 1
     image = "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
     gpus = "all"
     shm_size = 17179869184
-    volumes = ["/cache", "/mnt/data:/data:ro"]
+    volumes = ["/cache", "/mnt/data:/data:ro", "/mnt/home:/home:rw"]
 ```
 
 - `concurrent = 1`：单台 GPU 服务器一次一个 GPU job。
 - `/mnt/data:/data:ro` 左侧必须是 **Runner 宿主机本地路径**，不要写 NFS export 字符串（如 `192.168.x.x:/mnt/...`）。
+- `/mnt/home:/home:rw` 用于 **checkpoint 持久化**（见上文 `ci_storage.py`）；无 NFS 时会 fallback 到 `.ci_storage/`。
 
 触发：Pipeline 手动 Play `gpu_smoke` → `run_training`；或 commit message 含 `[run train]`。
 
@@ -243,6 +300,8 @@ docker run --rm --gpus all --shm-size 16g \
 ```yaml
 MLOPS_GPU_IMAGE: "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel"
 DATA_DIR: "/data"
+MLOPS_STORAGE_USER: "<your-unix-user-on-gpu-host>"
+TRAIN_RUN_NAME: "smoke_linear"
 ```
 
 ## 与其他 pack 组合

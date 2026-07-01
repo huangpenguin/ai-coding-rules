@@ -1,0 +1,8 @@
+# mlops-gpu: local / CI training outputs (merge into project .gitignore if needed)
+experiments/
+tb_logger/
+.ci_storage/
+.ci_experiments_root
+.ci_tb_logger_root
+.ci_storage_host_hint
+results/mlops_train/
