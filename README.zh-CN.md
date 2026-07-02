@@ -105,6 +105,12 @@ include:
 | `inject-ai.sh` | inject 入口 |
 | 根目录 `pyproject.toml`、`.gitlab-ci.yml` | **本仓库自身 CI**，不会 inject |
 
+模板质量检查：
+
+```bash
+bash scripts/check-template-clean.sh
+```
+
 ## 维护本模板仓库
 
 ```bash

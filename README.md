@@ -107,6 +107,12 @@ This repo is a **template distributor**, not a typical application project.
 
 Docker Compose, GPU training, and pack docs belong under `templates/mlops-gpu/`, not at the repository root.
 
+Template hygiene check:
+
+```bash
+bash scripts/check-template-clean.sh
+```
+
 ## Template Repository Maintenance
 
 This repo is mirrored on **GitHub** and **GitLab**. Configure both remotes once:
