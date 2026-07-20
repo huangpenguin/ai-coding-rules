@@ -2,7 +2,9 @@
 
 **Language:** English | [Simplified Chinese](README.zh-CN.md)
 
-Reusable AI engineering template packs for any project. The default `init-ai` command installs only the language-agnostic **core** pack. All other capabilities are **separate packs** you add manually—there are no bundled profiles.
+Composable AI engineering **packs**. Default `init-ai` installs only the language-agnostic **core** pack. Everything else is added manually with `init-ai add <pack>`—no profiles.
+
+Scope: **ordinary Python** and **DL / GPU** tracks. Domain frameworks (e.g. mjlab RL templates) stay upstream; this repo only injects `core` into those projects.
 
 ## Quick Start
 
@@ -22,7 +24,7 @@ init-ai
 
 This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`, `MEMORY.md`, and project context directories. Core is language-agnostic (no Python/uv tooling).
 
-## Packs (add manually)
+## Packs
 
 | Pack | Command | What it adds | Does **not** add |
 |------|---------|--------------|------------------|
@@ -31,7 +33,6 @@ This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | Optional local Git hooks (Ruff on commit, Pyright on push) | CI, GPU (auto-includes python-quality) |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality, not pre-commit) |
 | **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose, thin Dev Container, **train** CI, uv-bootstrap | quality CI, ruff (standalone pack) |
-| **hf-space** | `init-ai add hf-space` | HF Space deploy script | — |
 
 Automatic pack dependencies: `ci-quality` → `python-quality`; `pre-commit-hooks` → `python-quality`. Neither installs Git hooks automatically.
 
@@ -42,17 +43,20 @@ init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 ```
 
-## Common paths (manual composition)
+## Two primary tracks
+
+| Track | Steps |
+|-------|--------|
+| **Ordinary Python** | `init-ai` → `add python-quality` → (optional) `pre-commit-hooks` / `ci-quality` |
+| **DL / GPU** | `init-ai` → `add mlops-gpu`; add `python-quality` / `ci-quality` only when you need lint/CI |
+
+Other common scenarios:
 
 | Scenario | Steps |
 |----------|--------|
 | Vue / frontend / docs | `init-ai` only |
-| Legacy research repo | `init-ai` only |
+| External RL (e.g. mjlab) | `init-ai` only (use upstream training stack; do not default to `mlops-gpu`) |
 | Legacy GPU (e.g. BasicSR) | `init-ai` → `add mlops-gpu` |
-| Modern Python | `init-ai` → `add python-quality` |
-| CI lint on MR | … → `add ci-quality` |
-| Local commit/push hooks | … → `add pre-commit-hooks` (optional) |
-| HF Space deploy | … → `add hf-space` |
 
 **Legacy GPU tip:** `docker compose run --rm train uv run python ...` (never bare-metal ML on the host). See injected `docs/packs/mlops-gpu.zh-CN.md` for full ops.
 

@@ -2,7 +2,9 @@
 
 **Language / 语言:** [English](README.md) | 简体中文
 
-这是一个给任意项目使用的 AI 工程化模板仓库。模板按 **独立 pack** 拆分：默认 `init-ai` 只注入 **core**；其余能力需 **手动** `init-ai add <pack>`，**没有** profile 组合命令。
+本仓库提供可组合的 AI 工程 **pack**：默认 `init-ai` 只注入语言无关的 **core**；其余能力需手动 `init-ai add <pack>`，**没有** profile。
+
+定位：服务 **普通 Python** 与 **DL / GPU** 两条路径。领域框架（如 mjlab 等 RL 模板）用上游仓库，本仓库只插 `core`。
 
 ## 快速开始
 
@@ -20,18 +22,17 @@ cd your-project
 init-ai
 ```
 
-默认只应用 `core` pack：`.cursor/rules/`、`CLAUDE.md`、`.cursorrules`、`MEMORY.md` 和项目上下文目录。core **语言无关**，不含 Python/uv 工具链。
+默认只应用 `core`：`.cursor/rules/`、`CLAUDE.md`、`.cursorrules`、`MEMORY.md` 和项目上下文目录。core **语言无关**，不含 Python/uv 工具链。
 
-## Pack 一览（手动 add）
+## Pack 一览
 
 | Pack | 命令 | 注入内容 | **不包含** |
 |------|------|----------|------------|
 | **core** | `init-ai` | Cursor/Claude 规则、项目记忆 | Python、CI、Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
-| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（会自动带上 python-quality，不含 pre-commit） |
+| **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（自动带上 python-quality，不含 pre-commit） |
 | **mlops-gpu** | `init-ai add mlops-gpu` | Docker Compose、薄 Dev Container、**train** CI、uv-bootstrap | quality CI、ruff（独立 pack） |
-| **hf-space** | `init-ai add hf-space` | HF Space 部署 | — |
 
 唯一自动依赖：`ci-quality` → `python-quality`；`pre-commit-hooks` → `python-quality`。均**不会**自动安装 Git hook。
 
@@ -42,17 +43,20 @@ init-ai add mlops-gpu --dry-run
 init-ai add mlops-gpu --apply
 ```
 
-## 常见路径（手动组合）
+## 两条主路径
+
+| 路径 | 步骤 |
+|------|------|
+| **普通 Python** | `init-ai` → `add python-quality` →（可选）`pre-commit-hooks` / `ci-quality` |
+| **DL / GPU** | `init-ai` → `add mlops-gpu`；需要 lint/CI 时再加 `python-quality` / `ci-quality` |
+
+其他常见场景：
 
 | 场景 | 步骤 |
 |------|------|
 | Vue / 前端 / 文档 | 仅 `init-ai` |
-| Legacy 研究仓库 | 仅 `init-ai` |
+| 外部 RL（如 mjlab） | 仅 `init-ai`（用上游训练栈；不要默认加 `mlops-gpu`） |
 | Legacy GPU（如 BasicSR） | `init-ai` → `add mlops-gpu` |
-| 现代 Python | `init-ai` → `add python-quality` |
-| MR 上要 CI lint | … → `add ci-quality` |
-| 要本地 commit/push hook | … → `add pre-commit-hooks`（可选） |
-| HF Space 部署 | … → `add hf-space` |
 
 **Legacy GPU 提示：** `docker compose run --rm train uv run python ...`（宿主机禁止 ML）。细节见 inject 后 `docs/packs/mlops-gpu.zh-CN.md`。
 
@@ -88,7 +92,7 @@ include:
 
 ## GPU 快速落地
 
-`init-ai add mlops-gpu --apply` 后，本地与 CI 使用同一镜像栈 `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`。操作细节（compose、Runner、数据路径）见 inject 后的 **`docs/packs/mlops-gpu.zh-CN.md`**。
+`init-ai add mlops-gpu --apply` 后，本地与 CI 使用同一镜像栈 `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel`。操作细节见 inject 后的 **`docs/packs/mlops-gpu.zh-CN.md`**。
 
 ## 文档入口
 

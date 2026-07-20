@@ -19,10 +19,8 @@ templates/<pack>/
 | [pre-commit-hooks](pre-commit-hooks/) | Optional local Git hooks (Ruff + Pyright pre-push) | Pulls in python-quality only |
 | [ci-quality](ci-quality/) | GitHub/GitLab **quality** CI | Pulls in python-quality only |
 | [mlops-gpu](mlops-gpu/) | Docker Compose, thin Dev Container, **train** CI, uv-bootstrap | Yes |
-| [hf-space](hf-space/) | Hugging Face Space deploy | Yes |
-| [mlflow-experimental](mlflow-experimental/) | Reserved / experimental MLflow docs | Yes |
 
-There are **no profiles**. Users add packs manually; see root README for composition examples and GitLab CI merge instructions.
+There are **no profiles**. Users add packs manually along two tracks (ordinary Python vs DL/GPU); see root README. Domain RL frameworks (e.g. mjlab) use upstream templates and only `init-ai` (core).
 
 ## Commands
 

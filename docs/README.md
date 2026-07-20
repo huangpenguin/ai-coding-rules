@@ -13,8 +13,6 @@ This folder keeps **template-repository-only** guides (not injected).
 | pre-commit-hooks | [templates/pre-commit-hooks/managed/docs/packs/pre-commit-hooks.zh-CN.md](../templates/pre-commit-hooks/managed/docs/packs/pre-commit-hooks.zh-CN.md) |
 | ci-quality | [templates/ci-quality/managed/docs/packs/ci-quality.zh-CN.md](../templates/ci-quality/managed/docs/packs/ci-quality.zh-CN.md) |
 | mlops-gpu | [templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md](../templates/mlops-gpu/managed/docs/packs/mlops-gpu.zh-CN.md) |
-| hf-space | [templates/hf-space/managed/docs/packs/hf-space.zh-CN.md](../templates/hf-space/managed/docs/packs/hf-space.zh-CN.md) |
-| mlflow-experimental | [templates/mlflow-experimental/managed/docs/packs/mlflow-experimental.zh-CN.md](../templates/mlflow-experimental/managed/docs/packs/mlflow-experimental.zh-CN.md) |
 
 ## Template repository only (not injected)
 

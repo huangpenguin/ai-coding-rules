@@ -23,7 +23,6 @@ Packs:
   pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
   mlops-gpu         Docker Compose, thin Dev Container, GitLab GPU train CI, uv-bootstrap
-  hf-space          Orphan-repo deploy to Hugging Face Space (git archive + force push)
 
 Modes:
   init              Initialize selected packs in the current project.
@@ -53,7 +52,7 @@ select_pack() {
   local pack="$1"
 
   case "${pack}" in
-    core|python-quality|hf-space|mlops-gpu)
+    core|python-quality|mlops-gpu)
       add_pack_once "${pack}"
       ;;
     pre-commit-hooks)
