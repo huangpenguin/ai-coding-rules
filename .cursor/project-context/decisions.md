@@ -7,7 +7,7 @@
 - **No profiles** (e.g. no `research-gpu`). Users add packs manually; root README documents each pack and common composition paths.
 - **Scope**: ordinary **Python** and **DL / GPU** tracks. Domain framework templates (RL such as mjlab, Isaac Lab, etc.) stay upstream; inject **core only** into those repos.
 - Optional packs (each addable via `init-ai add <pack>` unless noted):
-  - `core`: Language-agnostic Cursor / Claude rules and project memory. Safe for Vue, frontend, docs, and mixed repos. May include light, on-demand rules (e.g. `rl-conventions.mdc`) that are not separate packs.
+  - `core`: Language-agnostic Cursor / Claude rules and project memory. Safe for Vue, frontend, docs, and mixed repos. May include light, on-demand rules (e.g. `rl-conventions.mdc`) that are not separate packs. Also installs [mattpocock/skills](https://github.com/mattpocock/skills) via `scripts/install-matt-pocock-skills.sh` (Node.js/`npx` + network) and guides agents to align/design before non-trivial code.
   - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, and `.gitignore`. Does **not** add pre-commit. May run `uv init` and `uv add --dev ruff pyright` — do not use on non-Python projects.
   - `pre-commit-hooks`: Optional local Git hooks. Auto-includes `python-quality`. Adds `.pre-commit-config.yaml`, `setup-local-hooks.sh`, and `uv add --dev pre-commit`. Does **not** auto-install hooks.
   - `ci-quality`: GitHub Actions and GitLab **quality** CI. Auto-includes `python-quality` only. Root `.gitlab-ci.yml` is quality-only; default `QUALITY_CI_BLOCKING=false` (manual + allow_failure).
@@ -54,8 +54,15 @@
 - **Single bootstrap script**: `templates/mlops-gpu/managed/scripts/uv-bootstrap.sh` for Dev Container postCreate and GitLab GPU before_script.
 - BasicSR / legacy GPU: `init-ai` then `init-ai add mlops-gpu`; add `ci-quality` and `python-quality` only when needed.
 
+## Matt Pocock AI skills
+
+- Default `init-ai` (core) runs `scripts/install-matt-pocock-skills.sh` to install `mattpocock/skills` into `.agents/skills/` and `.claude/skills/` (copy mode; Cursor + Claude Code).
+- Agent rules (`matt-pocock-skills.mdc`, `agent-behavior.mdc`, `CLAUDE.md` / `AGENTS.md`) require design-before-code for non-trivial work: `grill-with-docs` → design (`codebase-design` / `to-spec`) → `implement` / `tdd`.
+- Per-repo config lives in `docs/agents/` after `/setup-matt-pocock-skills`. This template repo uses GitHub issues + default triage labels + single-context domain docs.
+- Re-run the install script on other machines / remote servers after clone, or rely on `init-ai` / `init-ai --update --apply`.
+
 ## Git Remotes (maintainer checkout)
 
-- `origin` → `git@github.com:huangpenguin/ai-coding-rules.git`
+- `github` → `git@github.com:huangpenguin/ai-coding-rules.git`
 - `gitlab` → `git@gitlab.com:jil_atr/ai-coding-rules.git`
-- After commits: `git push origin main && git push gitlab main`
+- After commits: `git push github main && git push gitlab main`

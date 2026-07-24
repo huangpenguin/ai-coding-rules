@@ -6,9 +6,10 @@
 
 包含：
 
-- Cursor rules: `.cursor/rules/`（通用 agent 行为、项目记忆、沟通风格等）
-- Claude / 兼容规则: `CLAUDE.md`、`.cursorrules`
+- Cursor rules: `.cursor/rules/`（通用 agent 行为、项目记忆、沟通风格、**Matt Pocock skills 指引**等）
+- Claude / 兼容规则: `CLAUDE.md`、`AGENTS.md`、`.cursorrules`
 - 项目记忆入口: `MEMORY.md`、`.cursor/project-context/`、`.cursor/lessons-learned/`
+- Matt Pocock skills 安装脚本: `scripts/install-matt-pocock-skills.sh`（`init-ai` 结束时自动执行，需 Node.js/`npx` + 网络）
 
 适合：
 
@@ -22,6 +23,20 @@
 init-ai
 init-ai --update --apply   # 更新已注入的 managed 文件
 ```
+
+## Matt Pocock AI skills
+
+`init-ai`（core）会安装 [mattpocock/skills](https://github.com/mattpocock/skills) 到 `.agents/skills/`（Cursor）与 `.claude/skills/`（Claude Code）。
+
+在远程服务器或其他电脑上同样适用：只要该环境有 Node.js，跑 `init-ai` 或：
+
+```bash
+bash scripts/install-matt-pocock-skills.sh
+```
+
+每个仓库首次使用工程类 skill 前，在 agent 里跑一次 `/setup-matt-pocock-skills`（配置 issue tracker、triage labels、domain docs）。
+
+Agent 规则要求：非琐碎功能/架构改动**先对齐与设计**（`grill-with-docs` → `codebase-design`/`to-spec`），再实现（`implement`/`tdd`）。
 
 ## 项目上下文（推荐）
 

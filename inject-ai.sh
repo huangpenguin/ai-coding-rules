@@ -18,7 +18,7 @@ Usage:
   init-ai add <pack> [--update] [--dry-run|--apply]
 
 Packs:
-  core              Cursor / Claude rules and project memory (default)
+  core              Cursor / Claude rules, project memory, Matt Pocock skills install (default)
   python-quality    Ruff, Pyright, and python-uv rules
   pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
@@ -32,6 +32,9 @@ Modes:
 
 Add packs manually in the order your project needs. See README for pack descriptions
 and how to merge .gitlab-ci.yml when using both ci-quality and mlops-gpu.
+
+The core pack also runs scripts/install-matt-pocock-skills.sh (requires Node.js/npx + network)
+so Cursor/Claude can use mattpocock/skills on this machine and on remote checkouts.
 USAGE
 }
 
@@ -243,6 +246,18 @@ apply_pack() {
   copy_tree_files "${pack_dir}/preserve" "${TARGET_DIR}" preserve
 }
 
+core_pack_selected() {
+  local pack
+
+  for pack in "${PACKS[@]}"; do
+    if [[ "${pack}" == "core" ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 python_quality_pack_selected() {
   local pack
 
@@ -305,6 +320,35 @@ ensure_pyproject_for_quality() {
   uv init --name "${project_name}" --no-readme
 }
 
+install_matt_pocock_skills() {
+  local installer="${TARGET_DIR}/scripts/install-matt-pocock-skills.sh"
+  local source_installer="${SOURCE_DIR}/scripts/install-matt-pocock-skills.sh"
+
+  if ! core_pack_selected; then
+    return
+  fi
+
+  echo
+  if [[ "${DRY_RUN}" == true ]]; then
+    printf '%-8s %s\n' "SKIP" "mattpocock/skills install (dry-run; needs npx + network)"
+    return
+  fi
+
+  if [[ ! -f "${installer}" ]]; then
+    if [[ -f "${source_installer}" ]]; then
+      mkdir -p "$(dirname "${installer}")"
+      cp -f "${source_installer}" "${installer}"
+      chmod +x "${installer}"
+      printf '%-8s %s\n' "ADD" "scripts/install-matt-pocock-skills.sh"
+    else
+      echo "ERROR: install-matt-pocock-skills.sh not found in target or template source." >&2
+      exit 1
+    fi
+  fi
+
+  bash "${installer}" "${TARGET_DIR}"
+}
+
 install_python_quality_tools() {
   if ! python_quality_pack_selected; then
     return
@@ -364,6 +408,7 @@ for pack in "${PACKS[@]}"; do
   apply_pack "${pack}"
 done
 
+install_matt_pocock_skills
 install_python_quality_tools
 install_pre_commit_hooks_tools
 
@@ -373,4 +418,7 @@ if [[ "${DRY_RUN}" == true ]]; then
 else
   echo
   echo "AI template packs completed."
+  if core_pack_selected; then
+    echo "Next (once per repo): run /setup-matt-pocock-skills in the agent if docs/agents/ is missing."
+  fi
 fi

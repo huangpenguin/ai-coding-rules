@@ -1,0 +1,28 @@
+---
+description: Install and use Matt Pocock AI skills before designing or coding
+alwaysApply: true
+---
+
+# Matt Pocock AI Skills
+
+Use the [mattpocock/skills](https://github.com/mattpocock/skills) set for real engineering work (alignment, design, TDD), not vibe coding.
+
+## Ensure installed
+
+- Skills live under `.agents/skills/` (Cursor) and `.claude/skills/` (Claude Code).
+- If `setup-matt-pocock-skills` is missing, run: `bash scripts/install-matt-pocock-skills.sh`
+- If `docs/agents/` is missing, run `/setup-matt-pocock-skills` once (or follow that skill) before other engineering skills.
+
+## Before generating non-trivial code
+
+Do **not** jump straight to implementation for new features, architecture changes, or unclear requirements. In order:
+
+1. **Align** — read and follow `grill-with-docs` (preferred) or `grill-me` until the decision tree is resolved.
+2. **Design** — use `codebase-design` / `design-an-interface` when modules or seams matter; use `to-spec` when the conversation is ready to become a spec.
+3. **Implement** — only then use `implement` / `tdd` as appropriate.
+
+For hard bugs use `diagnosing-bugs`. For "which skill?" use `ask-matt`.
+
+## Scope exceptions
+
+Skip the full grill/design loop for trivial one-liners, pure renames, docs-only edits, or when the user explicitly asks to skip planning.

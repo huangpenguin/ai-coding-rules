@@ -22,13 +22,15 @@ cd your-project
 init-ai
 ```
 
-This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `.cursorrules`, `MEMORY.md`, and project context directories. Core is language-agnostic (no Python/uv tooling).
+This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `MEMORY.md`, project context directories, and installs [mattpocock/skills](https://github.com/mattpocock/skills) (needs Node.js/`npx` + network). Core is language-agnostic (no Python/uv tooling).
+
+After `init-ai`, run `/setup-matt-pocock-skills` once per repo in the agent if `docs/agents/` is missing. Agents are instructed to align/design with these skills before non-trivial code generation.
 
 ## Packs
 
 | Pack | Command | What it adds | Does **not** add |
 |------|---------|--------------|------------------|
-| **core** | `init-ai` | Cursor/Claude rules, project memory | Python, CI, Docker |
+| **core** | `init-ai` | Cursor/Claude rules, project memory, Matt Pocock skills install | Python, CI, Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff, Pyright, python-uv rules | CI, GPU, pre-commit hooks |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | Optional local Git hooks (Ruff on commit, Pyright on push) | CI, GPU (auto-includes python-quality) |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality, not pre-commit) |

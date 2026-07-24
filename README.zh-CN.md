@@ -22,13 +22,15 @@ cd your-project
 init-ai
 ```
 
-默认只应用 `core`：`.cursor/rules/`、`CLAUDE.md`、`.cursorrules`、`MEMORY.md` 和项目上下文目录。core **语言无关**，不含 Python/uv 工具链。
+默认只应用 `core`：`.cursor/rules/`、`CLAUDE.md`、`AGENTS.md`、`.cursorrules`、`MEMORY.md`、项目上下文目录，并安装 [mattpocock/skills](https://github.com/mattpocock/skills)（需 Node.js/`npx` + 网络）。core **语言无关**，不含 Python/uv 工具链。
+
+每个仓库若还没有 `docs/agents/`，在 agent 里跑一次 `/setup-matt-pocock-skills`。规则要求 agent 在非琐碎代码生成前先用这些 skill 做对齐与设计。
 
 ## Pack 一览
 
 | Pack | 命令 | 注入内容 | **不包含** |
 |------|------|----------|------------|
-| **core** | `init-ai` | Cursor/Claude 规则、项目记忆 | Python、CI、Docker |
+| **core** | `init-ai` | Cursor/Claude 规则、项目记忆、Matt Pocock skills 安装 | Python、CI、Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（自动带上 python-quality，不含 pre-commit） |
