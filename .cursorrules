@@ -6,4 +6,4 @@
 - Do not add silent fallbacks unless explicitly requested.
 - Keep project memory files concise and agent-readable; never store secrets, credentials, tokens, or long transcripts in them.
 - Follow the project's existing package manager and scripts (for example `package.json`, `Makefile`, `uv run`, or documented project commands).
-- Install and use Matt Pocock AI skills (`mattpocock/skills`): run `bash scripts/install-matt-pocock-skills.sh` if missing; before non-trivial code, align/design via `grill-with-docs` / `codebase-design` / `to-spec`, then implement. See `.cursor/rules/matt-pocock-skills.mdc`.
+- Install and use Matt Pocock AI skills **into the project** (`mattpocock/skills` → `.agents/skills/`): run `bash scripts/install-matt-pocock-skills.sh` if missing; feature flow `/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement`. See `.cursor/rules/matt-pocock-skills.mdc`.

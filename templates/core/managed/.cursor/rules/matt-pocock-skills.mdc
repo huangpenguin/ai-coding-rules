@@ -7,22 +7,27 @@ alwaysApply: true
 
 Use the [mattpocock/skills](https://github.com/mattpocock/skills) set for real engineering work (alignment, design, TDD), not vibe coding.
 
-## Ensure installed
+## Project-local install (not global)
 
-- Skills live under `.agents/skills/` (Cursor) and `.claude/skills/` (Claude Code).
-- If `setup-matt-pocock-skills` is missing, run: `bash scripts/install-matt-pocock-skills.sh`
-- If `docs/agents/` is missing, run `/setup-matt-pocock-skills` once (or follow that skill) before other engineering skills.
+- Skills install **into the current project**: `.agents/skills/` (Cursor) and `.claude/skills/` (Claude Code). Not `~/.cursor/skills/` / user-global.
+- `init-ai` (core) and `bash scripts/install-matt-pocock-skills.sh` both install **project-scoped** (no `-g`).
+- If `setup-matt-pocock-skills` is missing, run the install script from the project root.
+- If `docs/agents/` is missing, run `/setup-matt-pocock-skills` **once** per repo before other engineering skills.
 
-## Before generating non-trivial code
+## Recommended feature workflow
 
-Do **not** jump straight to implementation for new features, architecture changes, or unclear requirements. In order:
+For non-trivial features, follow this order (do **not** jump to code):
 
-1. **Align** — read and follow `grill-with-docs` (preferred) or `grill-me` until the decision tree is resolved.
-2. **Design** — use `codebase-design` / `design-an-interface` when modules or seams matter; use `to-spec` when the conversation is ready to become a spec.
-3. **Implement** — only then use `implement` / `tdd` as appropriate.
+1. **`/setup-matt-pocock-skills`** — once per repo (issue tracker, triage labels, domain docs).
+2. **`/grill-with-docs`** (preferred in a codebase) or **`/grill-me`** — one question at a time until requirements and edge cases are clear.
+3. **`/to-spec`** — turn the agreed thread into a spec (business logic only; no implementation code).
+4. **`/to-tickets`** — split the spec into tracer-bullet tickets (testable vertical slices) right before coding.
+5. **`/implement`** — TDD per ticket; drives `/tdd` and finishes with `/code-review`. Clear context between tickets.
 
-For hard bugs use `diagnosing-bugs`. For "which skill?" use `ask-matt`.
+Periodic maintenance: **`/improve-codebase-architecture`** (scan for shallow modules → HTML report → deepen). Every few days is fine.
+
+For hard bugs: `/diagnosing-bugs`. Unsure which skill: `/ask-matt`.
 
 ## Scope exceptions
 
-Skip the full grill/design loop for trivial one-liners, pure renames, docs-only edits, or when the user explicitly asks to skip planning.
+Skip the full grill → spec → tickets loop for trivial one-liners, pure renames, docs-only edits, or when the user explicitly asks to skip planning.

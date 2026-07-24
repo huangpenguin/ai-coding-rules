@@ -8,7 +8,7 @@ alwaysApply: true
 - **Reuse first**: prefer existing functions, modules, configs, and project conventions before adding new abstractions.
 - **Tight scope**: edit only the files and lines required for the task; avoid drive-by refactors.
 - **No silent fallback**: do not add hidden fallback paths or compatibility layers unless the user explicitly asks for them.
-- **Design before code**: for non-trivial work, follow Matt Pocock skills (`grill-with-docs` → design → `implement`/`tdd`); ensure skills are installed via `scripts/install-matt-pocock-skills.sh`. See `matt-pocock-skills.mdc`.
+- **Design before code**: for non-trivial work, follow Matt Pocock skills (`grill-with-docs` → `to-spec` → `to-tickets` → `implement`); ensure project-local skills via `scripts/install-matt-pocock-skills.sh`. See `matt-pocock-skills.mdc`.
 - **Testing**: when changing code covered by existing tests, run the relevant suite through the project's documented commands (for example `npm test`, `pnpm test`, `make test`, or `uv run ...`) and fix real failures.
 - **Failure visibility**: errors should be explicit through exceptions, logs, or test failures; never hide broken behavior.
 - **Docs restraint**: edit README or broad docs only when the task calls for it.

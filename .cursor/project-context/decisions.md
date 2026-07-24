@@ -57,7 +57,8 @@
 ## Matt Pocock AI skills
 
 - Default `init-ai` (core) runs `scripts/install-matt-pocock-skills.sh` to install `mattpocock/skills` into `.agents/skills/` and `.claude/skills/` (copy mode; Cursor + Claude Code).
-- Agent rules (`matt-pocock-skills.mdc`, `agent-behavior.mdc`, `CLAUDE.md` / `AGENTS.md`) require design-before-code for non-trivial work: `grill-with-docs` → design (`codebase-design` / `to-spec`) → `implement` / `tdd`.
+- Install is **project-local** (no `-g`): skills live under the repo's `.agents/skills/` and `.claude/skills/`.
+- Agent rules require feature flow for non-trivial work: `/setup-matt-pocock-skills` (once) → `/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement`; periodic `/improve-codebase-architecture`.
 - Per-repo config lives in `docs/agents/` after `/setup-matt-pocock-skills`. This template repo uses GitHub issues + default triage labels + single-context domain docs.
 - Re-run the install script on other machines / remote servers after clone, or rely on `init-ai` / `init-ai --update --apply`.
 

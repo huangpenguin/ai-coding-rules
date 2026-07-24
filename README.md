@@ -26,6 +26,40 @@ This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`, `
 
 After `init-ai`, run `/setup-matt-pocock-skills` once per repo in the agent if `docs/agents/` is missing. Agents are instructed to align/design with these skills before non-trivial code generation.
 
+**Skills update:** re-running `init-ai` / `init-ai --update --apply` (or `bash scripts/install-matt-pocock-skills.sh`) refreshes project-local skills from upstream into `.agents/skills/` and `.claude/skills/` (**overwrite/copy**; does **not** wipe the rest of the project). Local edits inside those skill folders are replaced. Files removed upstream may linger until you delete them manually. `docs/agents/` and other project files are left alone.
+
+## Matt Pocock skills (manual invoke)
+
+Source: [mattpocock/skills](https://github.com/mattpocock/skills). Install is **project-local** (not global). Type the slash command (or name the skill) in Cursor / Claude Code.
+
+### Main feature flow (idea → ship)
+
+| Skill | When | What it does |
+|-------|------|----------------|
+| `/setup-matt-pocock-skills` | **Once** per repo, before other engineering skills | Configure issue tracker, triage labels, domain doc layout (`docs/agents/`) |
+| `/grill-with-docs` | Have a codebase; start of almost every change | Relentless interview + builds shared language (`CONTEXT.md` / ADRs) |
+| `/grill-me` | No codebase / non-code plans | Same interview as above, but **stateless** (no local docs) |
+| `/to-spec` | After grilling, when the thread is ready | Synthesize a **spec** (business logic; no implementation code) onto the issue tracker |
+| `/to-tickets` | Right before coding | Split plan/spec into tracer-bullet tickets with blocking edges |
+| `/implement` | Per ticket (fresh context each time) | TDD via `/tdd`, then `/code-review`, then commit |
+
+Keep grill → spec → tickets in **one** session when possible; clear context between each `/implement`.
+
+### On-ramps & maintenance
+
+| Skill | When | What it does |
+|-------|------|----------------|
+| `/ask-matt` | Unsure which skill/flow | Router over the user-invoked skills |
+| `/triage` | Incoming bugs/requests you didn't create | Move issues through triage roles → agent-ready |
+| `/diagnosing-bugs` | Hard / intermittent / regression bugs | Reproduce → minimise → hypothesise → instrument → fix → regression test |
+| `/improve-codebase-architecture` | Every few days / spare moment | Scan for shallow modules → HTML report → deepen |
+| `/wayfinder` | Huge foggy work spanning many sessions | Shared map of investigation tickets until the path is clear → then `/to-spec` |
+| `/tdd` | Build one behaviour test-first without a full spec | Red-green-refactor loop |
+| `/code-review` | Review a branch/PR since a fixed point | Standards + Spec axes (parallel) |
+| `/handoff` | Context full or need a fresh session | Compact thread to a markdown file for the next agent |
+
+Full reference and philosophy: upstream [README](https://github.com/mattpocock/skills/blob/main/README.md).
+
 ## Packs
 
 | Pack | Command | What it adds | Does **not** add |

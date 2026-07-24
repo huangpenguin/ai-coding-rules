@@ -12,8 +12,8 @@ CRITICAL: Before major architecture, debugging, or planning work, read `.cursor/
 
 ## Matt Pocock AI skills (design before code)
 
-- Ensure [mattpocock/skills](https://github.com/mattpocock/skills) is installed (`bash scripts/install-matt-pocock-skills.sh` if `.agents/skills/setup-matt-pocock-skills` is missing).
-- Before non-trivial code generation: align with `grill-with-docs` (or `grill-me`), design with `codebase-design` / `to-spec` as needed, then implement via `implement` / `tdd`.
+- Skills install **into the project** (`.agents/skills/` / `.claude/skills/`), not user-global. Run `bash scripts/install-matt-pocock-skills.sh` if missing.
+- Feature flow: `/setup-matt-pocock-skills` (once) → `/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement`. Periodic: `/improve-codebase-architecture`.
 - See `.cursor/rules/matt-pocock-skills.mdc`.
 
 ## Agent skills

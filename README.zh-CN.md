@@ -26,6 +26,40 @@ init-ai
 
 每个仓库若还没有 `docs/agents/`，在 agent 里跑一次 `/setup-matt-pocock-skills`。规则要求 agent 在非琐碎代码生成前先用这些 skill 做对齐与设计。
 
+**Skills 更新：** 再次执行 `init-ai` / `init-ai --update --apply`（或 `bash scripts/install-matt-pocock-skills.sh`）会从上游刷新项目内的 `.agents/skills/` 与 `.claude/skills/`（**覆盖拷贝**；**不会**清空整个项目）。你在这些 skill 目录里的本地改动会被覆盖；上游已删除的 skill 可能残留，需手动删。`docs/agents/` 等其它项目文件不动。
+
+## Matt Pocock skills（手动调用）
+
+来源：[mattpocock/skills](https://github.com/mattpocock/skills)。安装是**项目级**（非本机全局）。在 Cursor / Claude Code 里输入斜杠命令（或点名 skill）即可。
+
+### 主流程（想法 → 交付）
+
+| Skill | 时机 | 作用 |
+|-------|------|------|
+| `/setup-matt-pocock-skills` | **每仓库一次**，其它工程 skill 之前 | 配置 issue tracker、triage labels、domain docs（`docs/agents/`） |
+| `/grill-with-docs` | 有代码库时，几乎每次改动的起点 | 逐项诘问 + 沉淀共享语言（`CONTEXT.md` / ADR） |
+| `/grill-me` | 无代码库 / 非代码计划 | 同上诘问，但**无状态**（不写本地文档） |
+| `/to-spec` | grill 结束后、讨论已收敛 | 合成**规格**（业务逻辑；禁止写实现）到 issue tracker |
+| `/to-tickets` | 动手写代码前 | 拆成带阻塞边的 tracer-bullet 票据 |
+| `/implement` | 每张票单独开（建议清上下文） | 内部走 `/tdd`，收尾 `/code-review` 再提交 |
+
+grill → spec → tickets 尽量留在**同一会话**；每个 `/implement` 之间清上下文。
+
+### 入口与维护
+
+| Skill | 时机 | 作用 |
+|-------|------|------|
+| `/ask-matt` | 不知道该用哪个 | 路由到合适的 user-invoked skill |
+| `/triage` | 外部进来的 bug/需求（非本仓库 `/to-tickets` 产出） | 按 triage 角色推进到可给 agent 做 |
+| `/diagnosing-bugs` | 难复现 / 间歇 / 回归 | 复现 → 最小化 → 假设 → 埋点 → 修复 → 回归测试 |
+| `/improve-codebase-architecture` | 隔几天 / 有空时 | 扫描浅模块 → HTML 报告 → 加深设计 |
+| `/wayfinder` | 跨多会话的巨大模糊工作 | 共享调查票地图，路清后再接 `/to-spec` |
+| `/tdd` | 只想对某一行为红绿重构 | 独立 TDD 循环 |
+| `/code-review` | 按固定基点审分支/PR | Standards + Spec 双轴 |
+| `/handoff` | 上下文将满或要新开会话 | 压缩成 markdown 交给下一个 agent |
+
+完整说明见上游 [README](https://github.com/mattpocock/skills/blob/main/README.md)。
+
 ## Pack 一览
 
 | Pack | 命令 | 注入内容 | **不包含** |

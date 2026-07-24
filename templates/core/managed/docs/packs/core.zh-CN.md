@@ -26,17 +26,23 @@ init-ai --update --apply   # 更新已注入的 managed 文件
 
 ## Matt Pocock AI skills
 
-`init-ai`（core）会安装 [mattpocock/skills](https://github.com/mattpocock/skills) 到 `.agents/skills/`（Cursor）与 `.claude/skills/`（Claude Code）。
+`init-ai`（core）把 [mattpocock/skills](https://github.com/mattpocock/skills) **安装进当前项目**（不是本机全局）：`.agents/skills/`（Cursor）与 `.claude/skills/`（Claude Code）。未使用 `-g`。
 
-在远程服务器或其他电脑上同样适用：只要该环境有 Node.js，跑 `init-ai` 或：
+在远程服务器或其他电脑上同样适用：在该项目目录跑 `init-ai` 或：
 
 ```bash
 bash scripts/install-matt-pocock-skills.sh
 ```
 
-每个仓库首次使用工程类 skill 前，在 agent 里跑一次 `/setup-matt-pocock-skills`（配置 issue tracker、triage labels、domain docs）。
+推荐功能流（非琐碎改动）：
 
-Agent 规则要求：非琐碎功能/架构改动**先对齐与设计**（`grill-with-docs` → `codebase-design`/`to-spec`），再实现（`implement`/`tdd`）。
+1. `/setup-matt-pocock-skills` — 每仓库一次
+2. `/grill-with-docs`（有代码库时优先）或 `/grill-me` — 逐项澄清需求
+3. `/to-spec` — 写成规格（禁止写实现代码）
+4. `/to-tickets` — 拆成可测的垂直切片票据
+5. `/implement` — 按票 TDD；收尾带 code-review
+
+定期：`/improve-codebase-architecture`。详见 `.cursor/rules/matt-pocock-skills.mdc`。
 
 ## 项目上下文（推荐）
 
