@@ -8,12 +8,14 @@
 
 ## 快速开始
 
-新机器上安装一次：
+**使用端**（除唯一编辑端外的机器）：只装一次，不要改安装目录里的文件，也不要在那里 commit。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/huangpenguin/ai-coding-rules/main/install.sh | bash
 source ~/.zshrc   # 或 source ~/.bashrc
 ```
+
+`init-ai` 会先对 `~/.ai-coding-rules` 执行 `git pull --ff-only`，再注入。
 
 在任意项目中使用：
 
@@ -21,6 +23,8 @@ source ~/.zshrc   # 或 source ~/.bashrc
 cd your-project
 init-ai
 ```
+
+**编辑端**（只保留一台）：用普通 git 工作副本改模板，并 `git push origin main && git push gitlab main`。使用端只 pull。
 
 默认只应用 `core`：`.cursor/rules/`、`CLAUDE.md`、`AGENTS.md`、`.cursorrules`、`MEMORY.md`、项目上下文目录，并安装 [mattpocock/skills](https://github.com/mattpocock/skills)（需 Node.js/`npx` + 网络）。core **语言无关**，不含 Python/uv 工具链。
 

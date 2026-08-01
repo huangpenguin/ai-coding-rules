@@ -62,8 +62,15 @@
 - Per-repo config lives in `docs/agents/` after `/setup-matt-pocock-skills`. This template repo uses GitHub issues + default triage labels + single-context domain docs.
 - Re-run the install script on other machines / remote servers after clone, or rely on `init-ai` / `init-ai --update --apply`.
 
+## Consumer vs editor installs
+
+- **Editor (one machine only)**: editable git checkout; commit and `git push origin main && git push gitlab main`.
+- **Consumers (all other machines)**: install with `install.sh` into `~/.ai-coding-rules` only. Do not edit or commit there.
+- Consumer `init-ai` is a shell function that runs `git -C ~/.ai-coding-rules pull --ff-only` then `inject-ai.sh`. Re-running `install.sh` upgrades the wrapper and refreshes the clone.
+- `--ff-only` fails loudly if a consumer clone was dirtied or diverged; fix by resetting to remote or re-cloning, never by merging on consumers.
+
 ## Git Remotes (maintainer checkout)
 
-- `github` → `git@github.com:huangpenguin/ai-coding-rules.git`
+- `origin` → `git@github.com:huangpenguin/ai-coding-rules.git`
 - `gitlab` → `git@gitlab.com:jil_atr/ai-coding-rules.git`
-- After commits: `git push github main && git push gitlab main`
+- After commits: `git push origin main && git push gitlab main`

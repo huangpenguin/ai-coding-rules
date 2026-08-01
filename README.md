@@ -8,12 +8,14 @@ Scope: **ordinary Python** and **DL / GPU** tracks. Domain frameworks (e.g. mjla
 
 ## Quick Start
 
-Install once on a machine:
+**Consumer machines** (every host except the single editor): install once; never edit or commit inside the install dir.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/huangpenguin/ai-coding-rules/main/install.sh | bash
 source ~/.zshrc   # or source ~/.bashrc
 ```
+
+`init-ai` auto-runs `git pull --ff-only` on `~/.ai-coding-rules` before injecting.
 
 Use in a project:
 
@@ -21,6 +23,8 @@ Use in a project:
 cd your-project
 init-ai
 ```
+
+**Editor machine** (exactly one): keep a normal git checkout and `git push origin main && git push gitlab main`. Consumers only pull.
 
 This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `MEMORY.md`, project context directories, and installs [mattpocock/skills](https://github.com/mattpocock/skills) (needs Node.js/`npx` + network). Core is language-agnostic (no Python/uv tooling).
 

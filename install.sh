@@ -15,8 +15,12 @@ Usage:
 Options:
   --dir <path>   Install directory (default: ~/.ai-coding-rules)
   --repo <url>   Git clone URL (default: GitHub HTTPS)
-  --no-alias     Skip writing the init-ai shell alias
+  --no-alias     Skip writing the init-ai shell wrapper
   -h, --help     Show this help message
+
+Consumer machines (recommended):
+  Install once with this script, then only run init-ai in projects.
+  Do not edit or commit inside the install directory.
 
 Examples:
   curl -fsSL https://raw.githubusercontent.com/huangpenguin/ai-coding-rules/main/install.sh | bash
@@ -50,6 +54,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Expand a leading "~/" so wrappers store an absolute-ish home path.
+if [[ "${INSTALL_DIR}" == "~/"* ]]; then
+  INSTALL_DIR="${HOME}/${INSTALL_DIR#~/}"
+elif [[ "${INSTALL_DIR}" == "~" ]]; then
+  INSTALL_DIR="${HOME}"
+fi
+
 install_or_update_repo() {
   if [[ -d "${INSTALL_DIR}/.git" ]]; then
     echo "Updating existing template at ${INSTALL_DIR}..."
@@ -63,47 +74,96 @@ install_or_update_repo() {
   fi
 }
 
-append_alias_if_missing() {
+# Remove legacy `alias init-ai=...` and any previous managed wrapper block.
+strip_previous_init_ai() {
   local rc_file="$1"
-  local alias_line="alias init-ai=\"bash ${INSTALL_DIR}/inject-ai.sh\""
+  local tmp
+  local line
+  local state="normal"
+
+  if [[ ! -f "${rc_file}" ]]; then
+    return
+  fi
+
+  tmp="$(mktemp)"
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    case "${state}" in
+      normal)
+        if [[ "${line}" == "# AI coding rules template" ]]; then
+          state="after_marker"
+          continue
+        fi
+        if [[ "${line}" == "# end AI coding rules template" ]]; then
+          continue
+        fi
+        if [[ "${line}" == alias\ init-ai=* ]]; then
+          continue
+        fi
+        printf '%s\n' "${line}"
+        ;;
+      after_marker)
+        if [[ "${line}" == "# end AI coding rules template" ]]; then
+          state="normal"
+          continue
+        fi
+        if [[ "${line}" == alias\ init-ai=* ]]; then
+          state="normal"
+          continue
+        fi
+        if [[ "${line}" == "init-ai() {" || "${line}" == "init-ai()" ]]; then
+          state="in_function"
+          continue
+        fi
+        if [[ -z "${line}" ]]; then
+          continue
+        fi
+        # Unrecognized content after a lone marker: keep it.
+        state="normal"
+        printf '%s\n' "${line}"
+        ;;
+      in_function)
+        if [[ "${line}" == "}" || "${line}" == "# end AI coding rules template" ]]; then
+          state="normal"
+          continue
+        fi
+        continue
+        ;;
+    esac
+  done < "${rc_file}" > "${tmp}"
+
+  mv "${tmp}" "${rc_file}"
+}
+
+write_init_ai_wrapper() {
+  local rc_file="$1"
 
   if [[ ! -f "${rc_file}" ]]; then
     touch "${rc_file}"
   fi
 
-  if grep -Fq 'alias init-ai=' "${rc_file}"; then
-    echo "Alias already present in ${rc_file}"
-    return
-  fi
+  strip_previous_init_ai "${rc_file}"
 
   {
     echo ''
     echo '# AI coding rules template'
-    echo "${alias_line}"
+    echo 'init-ai() {'
+    echo "  git -C \"${INSTALL_DIR}\" pull --ff-only || return \$?"
+    echo "  bash \"${INSTALL_DIR}/inject-ai.sh\" \"\$@\""
+    echo '}'
+    echo '# end AI coding rules template'
   } >> "${rc_file}"
 
-  echo "Added init-ai alias to ${rc_file}"
+  echo "Configured init-ai wrapper in ${rc_file}"
 }
 
 configure_alias() {
-  local shell_name
-  shell_name="$(basename "${SHELL:-bash}")"
-
-  case "${shell_name}" in
-    zsh)
-      append_alias_if_missing "${HOME}/.zshrc"
-      ;;
-    bash)
-      append_alias_if_missing "${HOME}/.bashrc"
-      ;;
-    *)
-      append_alias_if_missing "${HOME}/.bashrc"
-      echo "Unknown shell '${shell_name}'. Added alias to ~/.bashrc only."
-      ;;
-  esac
+  # Keep bash and zsh logins consistent on multi-shell machines.
+  write_init_ai_wrapper "${HOME}/.zshrc"
+  write_init_ai_wrapper "${HOME}/.bashrc"
 }
 
 install_or_update_repo
+INSTALL_DIR="$(cd "${INSTALL_DIR}" && pwd)"
 
 if [[ "${CONFIGURE_ALIAS}" == true ]]; then
   configure_alias
@@ -113,16 +173,21 @@ cat <<EOF
 
 Template ready at: ${INSTALL_DIR}
 
+This machine is a consumer install:
+  - init-ai always runs: git -C ${INSTALL_DIR} pull --ff-only
+  - then injects packs into the current project
+  - do not edit or commit inside ${INSTALL_DIR}
+
 Next steps:
-  1. Reload your shell, or run: source ~/.bashrc  (or source ~/.zshrc)
-  2. cd into a project directory
-  3. Run: init-ai
+  1. Reload your shell, or run: source ~/.zshrc  (or source ~/.bashrc)
+  2. Remove any old editable clone of this repo on this machine
+  3. cd into a project directory
+  4. Run: init-ai
 
-To update this template later (do not re-run curl install):
-  cd ${INSTALL_DIR}
-  git pull
+Force-refresh the template without injecting:
+  curl -fsSL https://raw.githubusercontent.com/huangpenguin/ai-coding-rules/main/install.sh | bash
 
-Then sync an existing project:
+Sync an already-injected project after template updates:
   init-ai --update --dry-run
   init-ai --update --apply
 EOF
