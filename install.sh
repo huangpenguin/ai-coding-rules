@@ -74,6 +74,60 @@ install_or_update_repo() {
   fi
 }
 
+# True when the managed init-ai() block exists with paths for the current INSTALL_DIR.
+init_ai_wrapper_is_correct() {
+  local rc_file="$1"
+  local line
+  local state="normal"
+  local has_marker_start=false
+  local has_marker_end=false
+  local has_function=false
+  local has_pull=false
+  local has_inject=false
+
+  if [[ ! -f "${rc_file}" ]]; then
+    return 1
+  fi
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    case "${state}" in
+      normal)
+        if [[ "${line}" == "# AI coding rules template" ]]; then
+          state="in_block"
+          has_marker_start=true
+        fi
+        ;;
+      in_block)
+        if [[ "${line}" == "init-ai() {" || "${line}" == "init-ai()" ]]; then
+          has_function=true
+        fi
+        if [[ "${line}" == "  git -C \"${INSTALL_DIR}\" pull --ff-only || return \$?" ]]; then
+          has_pull=true
+        fi
+        if [[ "${line}" == "  bash \"${INSTALL_DIR}/inject-ai.sh\" \"\$@\"" ]]; then
+          has_inject=true
+        fi
+        if [[ "${line}" == "# end AI coding rules template" ]]; then
+          has_marker_end=true
+          state="normal"
+        fi
+        ;;
+    esac
+  done < "${rc_file}"
+
+  [[ "${has_marker_start}" == true && "${has_marker_end}" == true && "${has_function}" == true && "${has_pull}" == true && "${has_inject}" == true ]]
+}
+
+legacy_init_ai_alias_present() {
+  local rc_file="$1"
+
+  if [[ ! -f "${rc_file}" ]]; then
+    return 1
+  fi
+
+  grep -q '^alias init-ai=' "${rc_file}"
+}
+
 # Remove legacy `alias init-ai=...` and any previous managed wrapper block.
 strip_previous_init_ai() {
   local rc_file="$1"
@@ -136,6 +190,11 @@ strip_previous_init_ai() {
 
 write_init_ai_wrapper() {
   local rc_file="$1"
+
+  if init_ai_wrapper_is_correct "${rc_file}" && ! legacy_init_ai_alias_present "${rc_file}"; then
+    echo "init-ai wrapper already configured in ${rc_file}; skipping"
+    return
+  fi
 
   if [[ ! -f "${rc_file}" ]]; then
     touch "${rc_file}"
