@@ -18,7 +18,7 @@ Usage:
   init-ai add <pack> [--update] [--dry-run|--apply]
 
 Packs:
-  core              Cursor / Claude rules, project memory, Matt Pocock skills install (default)
+  core              Agent rules, project memory, optional skills installer (default)
   python-quality    Ruff, Pyright, and python-uv rules
   pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
@@ -33,8 +33,8 @@ Modes:
 Add packs manually in the order your project needs. See README for pack descriptions
 and how to merge .gitlab-ci.yml when using both ci-quality and mlops-gpu.
 
-The core pack also runs scripts/install-matt-pocock-skills.sh (requires Node.js/npx + network)
-so Cursor/Claude can use mattpocock/skills on this machine and on remote checkouts.
+The core pack copies scripts/install-matt-pocock-skills.sh. Run it only when
+your project needs Matt Pocock skills (requires Node.js/npx + network).
 USAGE
 }
 
@@ -320,33 +320,42 @@ ensure_pyproject_for_quality() {
   uv init --name "${project_name}" --no-readme
 }
 
-install_matt_pocock_skills() {
-  local installer="${TARGET_DIR}/scripts/install-matt-pocock-skills.sh"
-  local source_installer="${SOURCE_DIR}/scripts/install-matt-pocock-skills.sh"
+prune_obsolete_core_rules() {
+  local entry expected relative_path target_file memory_file
 
   if ! core_pack_selected; then
     return
   fi
 
-  echo
-  if [[ "${DRY_RUN}" == true ]]; then
-    printf '%-8s %s\n' "SKIP" "mattpocock/skills install (dry-run; needs npx + network)"
-    return
-  fi
+  # Delete only exact copies of rules distributed before the AGENTS.md cleanup.
+  for entry in \
+    '299fce31e37cd7daad2f9c8a1a2054b359441666 .cursorrules' \
+    '12d7e7ad75cb73bfc0930ecd75c944faaefd8044 .cursor/rules/agent-behavior.mdc' \
+    'b0bbc54b5b2261715a5c39168ba24022cc76ff62 .cursor/rules/language-and-communication.mdc' \
+    'ffee2c57e139c59125ac8873a97d1a3c0fc625ce .cursor/rules/matt-pocock-skills.mdc' \
+    'f4d3b6f0359a14c6499b5e15c1e54d48c16dfe72 .cursor/rules/project-memory.mdc' \
+    '7d944ac00ae899fa16bd0aa7cdfa8cba62634973 .cursor/rules/readme-structure.mdc' \
+    'abeed0d7dabe2f1e73446b24206c4c7a7dfefa61 .cursor/rules/rl-conventions.mdc'; do
+    expected="${entry%% *}"
+    relative_path="${entry#* }"
+    target_file="${TARGET_DIR}/${relative_path}"
 
-  if [[ ! -f "${installer}" ]]; then
-    if [[ -f "${source_installer}" ]]; then
-      mkdir -p "$(dirname "${installer}")"
-      cp -f "${source_installer}" "${installer}"
-      chmod +x "${installer}"
-      printf '%-8s %s\n' "ADD" "scripts/install-matt-pocock-skills.sh"
-    else
-      echo "ERROR: install-matt-pocock-skills.sh not found in target or template source." >&2
-      exit 1
+    if [[ -f "${target_file}" ]] && [[ "$(git hash-object -- "${target_file}")" == "${expected}" ]]; then
+      printf '%-8s %s\n' "REMOVE" "${relative_path} (obsolete template copy)"
+      if [[ "${DRY_RUN}" == false ]]; then
+        rm -- "${target_file}"
+      fi
+    fi
+  done
+
+  # MEMORY.md is a preserve file. Refresh only the untouched old placeholder.
+  memory_file="${TARGET_DIR}/MEMORY.md"
+  if [[ -f "${memory_file}" ]] && [[ "$(git hash-object -- "${memory_file}")" == '07873ccfcd81e29ba8221fc8ee29a6170a78378b' ]]; then
+    printf '%-8s %s\n' "UPDATE" "MEMORY.md (obsolete template placeholder)"
+    if [[ "${DRY_RUN}" == false ]]; then
+      cp -f "${SOURCE_DIR}/templates/core/preserve/MEMORY.md" "${memory_file}"
     fi
   fi
-
-  bash "${installer}" "${TARGET_DIR}"
 }
 
 install_python_quality_tools() {
@@ -408,7 +417,7 @@ for pack in "${PACKS[@]}"; do
   apply_pack "${pack}"
 done
 
-install_matt_pocock_skills
+prune_obsolete_core_rules
 install_python_quality_tools
 install_pre_commit_hooks_tools
 
@@ -419,6 +428,6 @@ else
   echo
   echo "AI template packs completed."
   if core_pack_selected; then
-    echo "Next (once per repo): run /setup-matt-pocock-skills in the agent if docs/agents/ is missing."
+    echo "Optional skills: bash scripts/install-matt-pocock-skills.sh"
   fi
 fi

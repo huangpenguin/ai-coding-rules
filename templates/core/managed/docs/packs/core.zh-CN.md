@@ -6,10 +6,10 @@
 
 包含：
 
-- Cursor rules: `.cursor/rules/`（通用 agent 行为、项目记忆、沟通风格、**Matt Pocock skills 指引**等）
-- Claude / 兼容规则: `CLAUDE.md`、`AGENTS.md`、`.cursorrules`
+- 通用说明：`AGENTS.md`；`CLAUDE.md` 引用同一文件，避免两份规则漂移
+- Cursor 专项规则：`.cursor/rules/`（仅相关任务或文件触发）
 - 项目记忆入口: `MEMORY.md`、`.cursor/project-context/`、`.cursor/lessons-learned/`
-- Matt Pocock skills 安装脚本: `scripts/install-matt-pocock-skills.sh`（`init-ai` 结束时自动执行，需 Node.js/`npx` + 网络）
+- 可选 skills 安装脚本：`scripts/install-matt-pocock-skills.sh`（手动运行时才需要 Node.js/`npx` + 网络）
 
 适合：
 
@@ -26,7 +26,7 @@ init-ai --update --apply   # 更新已注入的 managed 文件
 
 ## Matt Pocock AI skills
 
-`init-ai`（core）把 [mattpocock/skills](https://github.com/mattpocock/skills) **安装进当前项目**（不是本机全局）：`.agents/skills/`（Cursor）与 `.claude/skills/`（Claude Code）。未使用 `-g`。
+需要 [mattpocock/skills](https://github.com/mattpocock/skills) 的工作流时，在当前项目手动安装；`init-ai` 不会自动安装或更新 skills。
 
 在远程服务器或其他电脑上同样适用：在该项目目录跑 `init-ai` 或：
 
@@ -34,7 +34,7 @@ init-ai --update --apply   # 更新已注入的 managed 文件
 bash scripts/install-matt-pocock-skills.sh
 ```
 
-推荐功能流（非琐碎改动）：
+复杂需求可以按需选用：
 
 1. `/setup-matt-pocock-skills` — 每仓库一次
 2. `/grill-with-docs`（有代码库时优先）或 `/grill-me` — 逐项澄清需求
@@ -42,7 +42,9 @@ bash scripts/install-matt-pocock-skills.sh
 4. `/to-tickets` — 拆成可测的垂直切片票据
 5. `/implement` — 按票 TDD；收尾带 code-review
 
-定期：`/improve-codebase-architecture`。详见 `.cursor/rules/matt-pocock-skills.mdc`。
+普通改动不要求走完整流程。明确要审视架构时可用 `/improve-codebase-architecture`。
+
+`init-ai --update --apply` 会清理内容与旧模板完全一致的 `.cursorrules` 和重复 Cursor 规则；改过的文件会保留，需自行检查是否还需要。
 
 ## 项目上下文（推荐）
 

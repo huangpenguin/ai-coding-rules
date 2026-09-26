@@ -14,7 +14,7 @@ templates/<pack>/
 
 | Pack | Purpose | Standalone? |
 |------|---------|-------------|
-| [core](core/) | Default: Cursor rules, `CLAUDE.md`, `.cursorrules`, memory | Yes |
+| [core](core/) | Default: `AGENTS.md`, Claude import, scoped Cursor rules, memory, optional skills installer | Yes |
 | [python-quality](python-quality/) | Ruff, Pyright, python-uv rules | Yes |
 | [pre-commit-hooks](pre-commit-hooks/) | Optional local Git hooks (Ruff + Pyright pre-push) | Pulls in python-quality only |
 | [ci-quality](ci-quality/) | GitHub/GitLab **quality** CI | Pulls in python-quality only |

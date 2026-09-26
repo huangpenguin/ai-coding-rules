@@ -24,30 +24,30 @@ cd your-project
 init-ai
 ```
 
-**Editor machine** (exactly one): keep a normal git checkout and `git push origin main && git push gitlab main`. Consumers only pull.
+**Editor machine** (exactly one): keep a normal git checkout and push to both configured remotes. Consumers only pull.
 
-This applies only the `core` pack: `.cursor/rules/`, `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `MEMORY.md`, project context directories, and installs [mattpocock/skills](https://github.com/mattpocock/skills) (needs Node.js/`npx` + network). Core is language-agnostic (no Python/uv tooling).
+This applies only the language-agnostic `core` pack: a concise `AGENTS.md`, a Claude import of that file, scoped Cursor rules, project memory, and an optional skills installer. It needs no Node.js or network access beyond the template pull.
 
-After `init-ai`, run `/setup-matt-pocock-skills` once per repo in the agent if `docs/agents/` is missing. Agents are instructed to align/design with these skills before non-trivial code generation.
+`init-ai --update --apply` refreshes managed rules and removes obsolete rules only when their contents exactly match the former template. Custom versions stay untouched.
 
-**Skills update:** re-running `init-ai` / `init-ai --update --apply` (or `bash scripts/install-matt-pocock-skills.sh`) refreshes project-local skills from upstream into `.agents/skills/` and `.claude/skills/` (**overwrite/copy**; does **not** wipe the rest of the project). Local edits inside those skill folders are replaced. Files removed upstream may linger until you delete them manually. `docs/agents/` and other project files are left alone.
+**Optional skills:** run `bash scripts/install-matt-pocock-skills.sh` inside a project only when those workflows help. This needs Node.js/`npx` and network access. It refreshes `.agents/skills/` and `.claude/skills/` from upstream; review local edits before rerunning it. `init-ai` does not install or refresh skills automatically.
 
-## Matt Pocock skills (manual invoke)
+## Matt Pocock skills (optional)
 
-Source: [mattpocock/skills](https://github.com/mattpocock/skills). Install is **project-local** (not global). Type the slash command (or name the skill) in Cursor / Claude Code.
+Source: [mattpocock/skills](https://github.com/mattpocock/skills). Install is project-local. Use a relevant skill when its workflow helps; ordinary edits do not need the full sequence.
 
 ### Main feature flow (idea → ship)
 
 | Skill | When | What it does |
 |-------|------|----------------|
-| `/setup-matt-pocock-skills` | **Once** per repo, before other engineering skills | Configure issue tracker, triage labels, domain doc layout (`docs/agents/`) |
-| `/grill-with-docs` | Have a codebase; start of almost every change | Relentless interview + builds shared language (`CONTEXT.md` / ADRs) |
+| `/setup-matt-pocock-skills` | When the project needs shared issue and domain conventions | Configure issue tracker, triage labels, domain doc layout (`docs/agents/`) |
+| `/grill-with-docs` | Requirements are unclear in an existing codebase | Clarify requirements and capture shared language (`CONTEXT.md` / ADRs) |
 | `/grill-me` | No codebase / non-code plans | Same interview as above, but **stateless** (no local docs) |
 | `/to-spec` | After grilling, when the thread is ready | Synthesize a **spec** (business logic; no implementation code) onto the issue tracker |
 | `/to-tickets` | Right before coding | Split plan/spec into tracer-bullet tickets with blocking edges |
 | `/implement` | Per ticket (fresh context each time) | TDD via `/tdd`, then `/code-review`, then commit |
 
-Keep grill → spec → tickets in **one** session when possible; clear context between each `/implement`.
+Use only the steps the task needs; a small change can go directly to implementation.
 
 ### On-ramps & maintenance
 
@@ -56,7 +56,7 @@ Keep grill → spec → tickets in **one** session when possible; clear context 
 | `/ask-matt` | Unsure which skill/flow | Router over the user-invoked skills |
 | `/triage` | Incoming bugs/requests you didn't create | Move issues through triage roles → agent-ready |
 | `/diagnosing-bugs` | Hard / intermittent / regression bugs | Reproduce → minimise → hypothesise → instrument → fix → regression test |
-| `/improve-codebase-architecture` | Every few days / spare moment | Scan for shallow modules → HTML report → deepen |
+| `/improve-codebase-architecture` | When intentionally reviewing architecture | Scan for shallow modules → HTML report → deepen |
 | `/wayfinder` | Huge foggy work spanning many sessions | Shared map of investigation tickets until the path is clear → then `/to-spec` |
 | `/tdd` | Build one behaviour test-first without a full spec | Red-green-refactor loop |
 | `/code-review` | Review a branch/PR since a fixed point | Standards + Spec axes (parallel) |
@@ -68,7 +68,7 @@ Full reference and philosophy: upstream [README](https://github.com/mattpocock/s
 
 | Pack | Command | What it adds | Does **not** add |
 |------|---------|--------------|------------------|
-| **core** | `init-ai` | Cursor/Claude rules, project memory, Matt Pocock skills install | Python, CI, Docker |
+| **core** | `init-ai` | Agent rules, project memory, optional skills installer | Python, CI, Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff, Pyright, python-uv rules | CI, GPU, pre-commit hooks |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | Optional local Git hooks (Ruff on commit, Pyright on push) | CI, GPU (auto-includes python-quality) |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality, not pre-commit) |
@@ -146,7 +146,7 @@ This repo is a **template distributor**, not a typical application project.
 | `inject-ai.sh`, `install.sh` | Install and inject entrypoints |
 | `templates/<pack>/` | **Canonical inject source** — edit here for target projects |
 | `docs/` | Index + guides that stay in this repo only |
-| `.cursorrules`, `CLAUDE.md`, `.cursor/` | Maintainer dogfooding for this repo |
+| `AGENTS.md`, `CLAUDE.md`, `.cursor/` | Maintainer instructions for this repo |
 | `pyproject.toml`, `ruff.toml`, `.gitlab-ci.yml`, `.github/` | **This repo's own CI** — not injected |
 
 Docker Compose, GPU training, and pack docs belong under `templates/mlops-gpu/`, not at the repository root.
@@ -162,7 +162,7 @@ bash scripts/check-template-clean.sh
 This repo is mirrored on **GitHub** and **GitLab**. Configure both remotes once:
 
 ```bash
-git remote add origin git@github.com:huangpenguin/ai-coding-rules.git   # skip if origin exists
+git remote add github git@github.com:huangpenguin/ai-coding-rules.git   # skip if github exists
 git remote add gitlab git@gitlab.com:jil_atr/ai-coding-rules.git        # GitLab canonical path
 git fetch --all
 ```
@@ -170,7 +170,7 @@ git fetch --all
 After commits on `main`, push to both:
 
 ```bash
-git push origin main && git push gitlab main
+git push github main && git push gitlab main
 ```
 
-`main` tracks `gitlab/main` by default on this maintainer checkout; use `git pull gitlab main` or `git pull origin main` after fetching both.
+`main` tracks `gitlab/main` by default on this maintainer checkout; use `git pull gitlab main` or `git pull github main` after fetching both.

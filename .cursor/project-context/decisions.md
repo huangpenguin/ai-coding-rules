@@ -7,7 +7,7 @@
 - **No profiles** (e.g. no `research-gpu`). Users add packs manually; root README documents each pack and common composition paths.
 - **Scope**: ordinary **Python** and **DL / GPU** tracks. Domain framework templates (RL such as mjlab, Isaac Lab, etc.) stay upstream; inject **core only** into those repos.
 - Optional packs (each addable via `init-ai add <pack>` unless noted):
-  - `core`: Language-agnostic Cursor / Claude rules and project memory. Safe for Vue, frontend, docs, and mixed repos. May include light, on-demand rules (e.g. `rl-conventions.mdc`) that are not separate packs. Also installs [mattpocock/skills](https://github.com/mattpocock/skills) via `scripts/install-matt-pocock-skills.sh` (Node.js/`npx` + network) and guides agents to align/design before non-trivial code.
+  - `core`: Language-agnostic `AGENTS.md`, Claude import, scoped Cursor rules, and project memory. Safe for Vue, frontend, docs, and mixed repos. Includes an optional [mattpocock/skills](https://github.com/mattpocock/skills) installer; `init-ai` does not run it.
   - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, and `.gitignore`. Does **not** add pre-commit. May run `uv init` and `uv add --dev ruff pyright` — do not use on non-Python projects.
   - `pre-commit-hooks`: Optional local Git hooks. Auto-includes `python-quality`. Adds `.pre-commit-config.yaml`, `setup-local-hooks.sh`, and `uv add --dev pre-commit`. Does **not** auto-install hooks.
   - `ci-quality`: GitHub Actions and GitLab **quality** CI. Auto-includes `python-quality` only. Root `.gitlab-ci.yml` is quality-only; default `QUALITY_CI_BLOCKING=false` (manual + allow_failure).
@@ -54,17 +54,17 @@
 - **Single bootstrap script**: `templates/mlops-gpu/managed/scripts/uv-bootstrap.sh` for Dev Container postCreate and GitLab GPU before_script.
 - BasicSR / legacy GPU: `init-ai` then `init-ai add mlops-gpu`; add `ci-quality` and `python-quality` only when needed.
 
-## Matt Pocock AI skills
+## Agent instructions and skills
 
-- Default `init-ai` (core) runs `scripts/install-matt-pocock-skills.sh` to install `mattpocock/skills` into `.agents/skills/` and `.claude/skills/` (copy mode; Cursor + Claude Code).
-- Install is **project-local** (no `-g`): skills live under the repo's `.agents/skills/` and `.claude/skills/`.
-- Agent rules require feature flow for non-trivial work: `/setup-matt-pocock-skills` (once) → `/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement`; periodic `/improve-codebase-architecture`.
-- Per-repo config lives in `docs/agents/` after `/setup-matt-pocock-skills`. This template repo uses GitHub issues + default triage labels + single-context domain docs.
-- Re-run the install script on other machines / remote servers after clone, or rely on `init-ai` / `init-ai --update --apply`.
+- Keep always-loaded instructions in `AGENTS.md`; `CLAUDE.md` imports it. Cursor `.mdc` rules are reserved for scoped, tool-specific guidance. Do not distribute the legacy `.cursorrules` file.
+- The core pack copies `scripts/install-matt-pocock-skills.sh` but does not execute it. Install skills project-locally only when their workflow helps the task; do not require a fixed grill/spec/tickets/implement sequence.
+- Existing projects are refreshed with `init-ai --update --apply`. It removes obsolete rules only when they are exact copies of former managed templates; custom versions remain for manual review.
+- Per-repo issue and domain conventions may live in `docs/agents/` after `/setup-matt-pocock-skills` when a project needs them. This template repo uses GitHub issues + default triage labels + single-context domain docs.
+- Other machines do not need to reinstall skills after a template pull. Run the installer inside a project only when that project needs those skills.
 
 ## Consumer vs editor installs
 
-- **Editor (one machine only)**: editable git checkout; commit and `git push origin main && git push gitlab main`.
+- **Editor (one machine only)**: editable git checkout; commit and `git push github main && git push gitlab main`.
 - **Consumers (all other machines)**: install with `install.sh` into `~/.ai-coding-rules` only. Do not edit or commit there.
 - Consumer `init-ai` is a shell function that runs `git -C ~/.ai-coding-rules pull --ff-only` then `inject-ai.sh`. Re-running `install.sh` upgrades the wrapper and refreshes the clone.
 - `--ff-only` fails loudly if a consumer clone was dirtied or diverged; fix by resetting to remote or re-cloning, never by merging on consumers.
@@ -73,4 +73,4 @@
 
 - `origin` → `git@github.com:huangpenguin/ai-coding-rules.git`
 - `gitlab` → `git@gitlab.com:jil_atr/ai-coding-rules.git`
-- After commits: `git push origin main && git push gitlab main`
+- After commits: `git push github main && git push gitlab main`

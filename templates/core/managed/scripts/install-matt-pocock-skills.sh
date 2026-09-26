@@ -23,4 +23,4 @@ npx --yes skills@latest add mattpocock/skills \
 
 echo
 echo "Matt Pocock skills installed under this project's .agents/skills/ (and .claude/skills/)."
-echo "If docs/agents/ is missing, run /setup-matt-pocock-skills once in the agent."
+echo "Use the installed skills when their workflows help your task."

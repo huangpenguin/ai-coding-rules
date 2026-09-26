@@ -24,30 +24,30 @@ cd your-project
 init-ai
 ```
 
-**编辑端**（只保留一台）：用普通 git 工作副本改模板，并 `git push origin main && git push gitlab main`。使用端只 pull。
+**编辑端**（只保留一台）：用普通 git 工作副本改模板，推送到两个已配置的远端。使用端只 pull。
 
-默认只应用 `core`：`.cursor/rules/`、`CLAUDE.md`、`AGENTS.md`、`.cursorrules`、`MEMORY.md`、项目上下文目录，并安装 [mattpocock/skills](https://github.com/mattpocock/skills)（需 Node.js/`npx` + 网络）。core **语言无关**，不含 Python/uv 工具链。
+默认只应用语言无关的 `core`：精简的 `AGENTS.md`、引用它的 `CLAUDE.md`、按需触发的 Cursor 规则、项目记忆及可选的 skills 安装脚本。除拉取模板外，不需要 Node.js 或额外联网。
 
-每个仓库若还没有 `docs/agents/`，在 agent 里跑一次 `/setup-matt-pocock-skills`。规则要求 agent 在非琐碎代码生成前先用这些 skill 做对齐与设计。
+`init-ai --update --apply` 会更新受管理规则；旧规则只有在内容与原模板完全一致时才会被清理，自定义版本保持不动。
 
-**Skills 更新：** 再次执行 `init-ai` / `init-ai --update --apply`（或 `bash scripts/install-matt-pocock-skills.sh`）会从上游刷新项目内的 `.agents/skills/` 与 `.claude/skills/`（**覆盖拷贝**；**不会**清空整个项目）。你在这些 skill 目录里的本地改动会被覆盖；上游已删除的 skill 可能残留，需手动删。`docs/agents/` 等其它项目文件不动。
+**可选 skills：** 只有需要相应工作流时，才在项目里运行 `bash scripts/install-matt-pocock-skills.sh`（需要 Node.js/`npx` 和网络）。这会从上游刷新 `.agents/skills/` 与 `.claude/skills/`；重跑前先检查其中的本地修改。`init-ai` 不再自动安装或刷新 skills。
 
-## Matt Pocock skills（手动调用）
+## Matt Pocock skills（可选）
 
-来源：[mattpocock/skills](https://github.com/mattpocock/skills)。安装是**项目级**（非本机全局）。在 Cursor / Claude Code 里输入斜杠命令（或点名 skill）即可。
+来源：[mattpocock/skills](https://github.com/mattpocock/skills)。按项目安装，任务需要时再用；普通修改不必走完整流程。
 
 ### 主流程（想法 → 交付）
 
 | Skill | 时机 | 作用 |
 |-------|------|------|
-| `/setup-matt-pocock-skills` | **每仓库一次**，其它工程 skill 之前 | 配置 issue tracker、triage labels、domain docs（`docs/agents/`） |
-| `/grill-with-docs` | 有代码库时，几乎每次改动的起点 | 逐项诘问 + 沉淀共享语言（`CONTEXT.md` / ADR） |
+| `/setup-matt-pocock-skills` | 需要共享 issue 与领域约定时 | 配置 issue tracker、triage labels、domain docs（`docs/agents/`） |
+| `/grill-with-docs` | 现有代码库中的需求不清楚时 | 澄清需求并沉淀共享语言（`CONTEXT.md` / ADR） |
 | `/grill-me` | 无代码库 / 非代码计划 | 同上诘问，但**无状态**（不写本地文档） |
 | `/to-spec` | grill 结束后、讨论已收敛 | 合成**规格**（业务逻辑；禁止写实现）到 issue tracker |
 | `/to-tickets` | 动手写代码前 | 拆成带阻塞边的 tracer-bullet 票据 |
 | `/implement` | 每张票单独开（建议清上下文） | 内部走 `/tdd`，收尾 `/code-review` 再提交 |
 
-grill → spec → tickets 尽量留在**同一会话**；每个 `/implement` 之间清上下文。
+只选任务需要的步骤；小改动可以直接实施。
 
 ### 入口与维护
 
@@ -56,7 +56,7 @@ grill → spec → tickets 尽量留在**同一会话**；每个 `/implement` �
 | `/ask-matt` | 不知道该用哪个 | 路由到合适的 user-invoked skill |
 | `/triage` | 外部进来的 bug/需求（非本仓库 `/to-tickets` 产出） | 按 triage 角色推进到可给 agent 做 |
 | `/diagnosing-bugs` | 难复现 / 间歇 / 回归 | 复现 → 最小化 → 假设 → 埋点 → 修复 → 回归测试 |
-| `/improve-codebase-architecture` | 隔几天 / 有空时 | 扫描浅模块 → HTML 报告 → 加深设计 |
+| `/improve-codebase-architecture` | 明确要审视架构时 | 扫描浅模块 → HTML 报告 → 加深设计 |
 | `/wayfinder` | 跨多会话的巨大模糊工作 | 共享调查票地图，路清后再接 `/to-spec` |
 | `/tdd` | 只想对某一行为红绿重构 | 独立 TDD 循环 |
 | `/code-review` | 按固定基点审分支/PR | Standards + Spec 双轴 |
@@ -68,7 +68,7 @@ grill → spec → tickets 尽量留在**同一会话**；每个 `/implement` �
 
 | Pack | 命令 | 注入内容 | **不包含** |
 |------|------|----------|------------|
-| **core** | `init-ai` | Cursor/Claude 规则、项目记忆、Matt Pocock skills 安装 | Python、CI、Docker |
+| **core** | `init-ai` | Agent 规则、项目记忆、可选 skills 安装脚本 | Python、CI、Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（自动带上 python-quality，不含 pre-commit） |
@@ -158,5 +158,5 @@ bash scripts/check-template-clean.sh
 ## 维护本模板仓库
 
 ```bash
-git push origin main && git push gitlab main
+git push github main && git push gitlab main
 ```
