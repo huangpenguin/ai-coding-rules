@@ -57,7 +57,7 @@
 ## Agent instructions and skills
 
 - Keep always-loaded instructions in `AGENTS.md`; `CLAUDE.md` imports it. Cursor `.mdc` rules are reserved for scoped, tool-specific guidance. Do not distribute the legacy `.cursorrules` file.
-- The core pack copies `scripts/install-matt-pocock-skills.sh` but does not execute it. Install skills project-locally only when their workflow helps the task; do not require a fixed grill/spec/tickets/implement sequence.
+- The core pack copies `scripts/install-matt-pocock-skills.sh` but does not execute it. The injected script requires one or more skill names; `--all` is explicit. Install skills project-locally only when their workflow helps the task; do not require a fixed grill/spec/tickets/implement sequence.
 - Existing projects are refreshed with `init-ai --update --apply`. It removes obsolete rules only when they are exact copies of former managed templates; custom versions remain for manual review.
 - Per-repo issue and domain conventions may live in `docs/agents/` after `/setup-matt-pocock-skills` when a project needs them. This template repo uses GitHub issues + default triage labels + single-context domain docs.
 - Other machines do not need to reinstall skills after a template pull. Run the installer inside a project only when that project needs those skills.

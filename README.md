@@ -30,7 +30,7 @@ This applies only the language-agnostic `core` pack: a concise `AGENTS.md`, a Cl
 
 `init-ai --update --apply` refreshes managed rules and removes obsolete rules only when their contents exactly match the former template. Custom versions stay untouched.
 
-**Optional skills:** run `bash scripts/install-matt-pocock-skills.sh` inside a project only when those workflows help. This needs Node.js/`npx` and network access. It refreshes `.agents/skills/` and `.claude/skills/` from upstream; review local edits before rerunning it. `init-ai` does not install or refresh skills automatically.
+**Optional skills:** inside an injected project, run `bash scripts/install-matt-pocock-skills.sh code-review` (or name another skill). Use `--all` only when you need the full set. This needs Node.js/`npx` and network access, and can replace local edits to installed skill files. `init-ai` does not install or refresh skills automatically.
 
 ## Matt Pocock skills (optional)
 

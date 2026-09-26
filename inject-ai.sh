@@ -33,8 +33,8 @@ Modes:
 Add packs manually in the order your project needs. See README for pack descriptions
 and how to merge .gitlab-ci.yml when using both ci-quality and mlops-gpu.
 
-The core pack copies scripts/install-matt-pocock-skills.sh. Run it only when
-your project needs Matt Pocock skills (requires Node.js/npx + network).
+The core pack copies scripts/install-matt-pocock-skills.sh. Pass one or more
+skill names when needed (requires Node.js/npx + network).
 USAGE
 }
 
@@ -428,6 +428,6 @@ else
   echo
   echo "AI template packs completed."
   if core_pack_selected; then
-    echo "Optional skills: bash scripts/install-matt-pocock-skills.sh"
+    echo "Optional skills: bash scripts/install-matt-pocock-skills.sh <skill-name>"
   fi
 fi

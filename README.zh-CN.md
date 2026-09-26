@@ -30,7 +30,7 @@ init-ai
 
 `init-ai --update --apply` 会更新受管理规则；旧规则只有在内容与原模板完全一致时才会被清理，自定义版本保持不动。
 
-**可选 skills：** 只有需要相应工作流时，才在项目里运行 `bash scripts/install-matt-pocock-skills.sh`（需要 Node.js/`npx` 和网络）。这会从上游刷新 `.agents/skills/` 与 `.claude/skills/`；重跑前先检查其中的本地修改。`init-ai` 不再自动安装或刷新 skills。
+**可选 skills：** 在已注入的项目里按需运行 `bash scripts/install-matt-pocock-skills.sh code-review`（或换成需要的 skill 名称）；确实需要全套时才用 `--all`。这需要 Node.js/`npx` 和网络，重跑前先检查已安装 skill 中的本地修改。`init-ai` 不再自动安装或刷新 skills。
 
 ## Matt Pocock skills（可选）
 

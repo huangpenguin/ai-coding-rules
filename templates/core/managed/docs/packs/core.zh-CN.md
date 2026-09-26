@@ -31,7 +31,8 @@ init-ai --update --apply   # 更新已注入的 managed 文件
 在远程服务器或其他电脑上同样适用：在该项目目录跑 `init-ai` 或：
 
 ```bash
-bash scripts/install-matt-pocock-skills.sh
+bash scripts/install-matt-pocock-skills.sh code-review
+# 只有需要整套时才用：bash scripts/install-matt-pocock-skills.sh --all
 ```
 
 复杂需求可以按需选用：
