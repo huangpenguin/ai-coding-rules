@@ -26,15 +26,15 @@ init-ai
 
 **编辑端**（只保留一台）：用普通 git 工作副本改模板，推送到两个已配置的远端。使用端只 pull。
 
-默认只应用语言无关的 `core`：精简的 `AGENTS.md`、引用它的 `CLAUDE.md`、按需触发的 Cursor 规则、项目记忆及可选的 skills 安装脚本。除拉取模板外，不需要 Node.js 或额外联网。
+默认只应用语言无关的 `core`：精简的 `AGENTS.md`、引用它的 `CLAUDE.md`、按需触发的 Cursor 规则、项目记忆，以及安装到当前项目的 [mattpocock/skills](https://github.com/mattpocock/skills)。安装 skills 需要 Node.js/`npx` 和网络。
 
 `init-ai --update --apply` 会更新受管理规则；旧规则只有在内容与原模板完全一致时才会被清理，自定义版本保持不动。
 
-**可选 skills：** 在已注入的项目里按需运行 `bash scripts/install-matt-pocock-skills.sh code-review`（或换成需要的 skill 名称）；确实需要全套时才用 `--all`。这需要 Node.js/`npx` 和网络，重跑前先检查已安装 skill 中的本地修改。`init-ai` 不再自动安装或刷新 skills。
+**Skills 更新：** `init-ai` 和 `init-ai --update --apply` 会在当前项目安装或刷新整套 Matt Pocock skills。`.agents/skills/` 与 `.claude/skills/` 内的本地修改可能被覆盖。之后若只想刷新某个 skill，可运行 `bash scripts/install-matt-pocock-skills.sh code-review`（或换成所需名称）。
 
-## Matt Pocock skills（可选）
+## Matt Pocock skills（默认安装）
 
-来源：[mattpocock/skills](https://github.com/mattpocock/skills)。按项目安装，任务需要时再用；普通修改不必走完整流程。
+来源：[mattpocock/skills](https://github.com/mattpocock/skills)。安装在项目内；按任务使用相关 skill，普通修改不必走完整流程。
 
 ### 主流程（想法 → 交付）
 
@@ -68,7 +68,7 @@ init-ai
 
 | Pack | 命令 | 注入内容 | **不包含** |
 |------|------|----------|------------|
-| **core** | `init-ai` | Agent 规则、项目记忆、可选 skills 安装脚本 | Python、CI、Docker |
+| **core** | `init-ai` | Agent 规则、项目记忆、Matt Pocock skills | Python、CI、Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff、Pyright、python-uv 规则 | CI、GPU、pre-commit hook |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | 可选本地 Git hook（commit Ruff / push Pyright） | CI、GPU（自动带上 python-quality） |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train（自动带上 python-quality，不含 pre-commit） |

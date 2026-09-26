@@ -9,7 +9,7 @@
 - 通用说明：`AGENTS.md`；`CLAUDE.md` 引用同一文件，避免两份规则漂移
 - Cursor 专项规则：`.cursor/rules/`（仅相关任务或文件触发）
 - 项目记忆入口: `MEMORY.md`、`.cursor/project-context/`、`.cursor/lessons-learned/`
-- 可选 skills 安装脚本：`scripts/install-matt-pocock-skills.sh`（手动运行时才需要 Node.js/`npx` + 网络）
+- Matt Pocock skills：`init-ai` 在当前项目安装完整套；需要 Node.js/`npx` 和网络
 
 适合：
 
@@ -26,13 +26,12 @@ init-ai --update --apply   # 更新已注入的 managed 文件
 
 ## Matt Pocock AI skills
 
-需要 [mattpocock/skills](https://github.com/mattpocock/skills) 的工作流时，在当前项目手动安装；`init-ai` 不会自动安装或更新 skills。
+`init-ai` 会把 [mattpocock/skills](https://github.com/mattpocock/skills) 安装到当前项目。按任务使用相关 skill，普通改动不要求走完整流程。
 
-在远程服务器或其他电脑上同样适用：在该项目目录跑 `init-ai` 或：
+在远程服务器或其他电脑上，进入项目目录运行 `init-ai --update --apply` 即可刷新模板与整套 skills。若只想单独刷新某个 skill：
 
 ```bash
 bash scripts/install-matt-pocock-skills.sh code-review
-# 只有需要整套时才用：bash scripts/install-matt-pocock-skills.sh --all
 ```
 
 复杂需求可以按需选用：

@@ -7,7 +7,7 @@
 - **No profiles** (e.g. no `research-gpu`). Users add packs manually; root README documents each pack and common composition paths.
 - **Scope**: ordinary **Python** and **DL / GPU** tracks. Domain framework templates (RL such as mjlab, Isaac Lab, etc.) stay upstream; inject **core only** into those repos.
 - Optional packs (each addable via `init-ai add <pack>` unless noted):
-  - `core`: Language-agnostic `AGENTS.md`, Claude import, scoped Cursor rules, and project memory. Safe for Vue, frontend, docs, and mixed repos. Includes an optional [mattpocock/skills](https://github.com/mattpocock/skills) installer; `init-ai` does not run it.
+  - `core`: Language-agnostic `AGENTS.md`, Claude import, scoped Cursor rules, project memory, and project-local [mattpocock/skills](https://github.com/mattpocock/skills). Safe for Vue, frontend, docs, and mixed repos. `init-ai` installs the full skill set with Node.js/`npx` and network access.
   - `python-quality`: Python-only. Adds `python-uv.mdc`, `bilingual-comments.mdc`, Ruff, Pyright, and `.gitignore`. Does **not** add pre-commit. May run `uv init` and `uv add --dev ruff pyright` — do not use on non-Python projects.
   - `pre-commit-hooks`: Optional local Git hooks. Auto-includes `python-quality`. Adds `.pre-commit-config.yaml`, `setup-local-hooks.sh`, and `uv add --dev pre-commit`. Does **not** auto-install hooks.
   - `ci-quality`: GitHub Actions and GitLab **quality** CI. Auto-includes `python-quality` only. Root `.gitlab-ci.yml` is quality-only; default `QUALITY_CI_BLOCKING=false` (manual + allow_failure).
@@ -57,10 +57,10 @@
 ## Agent instructions and skills
 
 - Keep always-loaded instructions in `AGENTS.md`; `CLAUDE.md` imports it. Cursor `.mdc` rules are reserved for scoped, tool-specific guidance. Do not distribute the legacy `.cursorrules` file.
-- The core pack copies `scripts/install-matt-pocock-skills.sh` but does not execute it. The injected script requires one or more skill names; `--all` is explicit. Install skills project-locally only when their workflow helps the task; do not require a fixed grill/spec/tickets/implement sequence.
+- The core pack copies and runs `scripts/install-matt-pocock-skills.sh --all` in the target project. The injected script also accepts skill names for later selective refreshes. Installing skills does not require the agent to follow a fixed grill/spec/tickets/implement sequence.
 - Existing projects are refreshed with `init-ai --update --apply`. It removes obsolete rules only when they are exact copies of former managed templates; custom versions remain for manual review.
 - Per-repo issue and domain conventions may live in `docs/agents/` after `/setup-matt-pocock-skills` when a project needs them. This template repo uses GitHub issues + default triage labels + single-context domain docs.
-- Other machines do not need to reinstall skills after a template pull. Run the installer inside a project only when that project needs those skills.
+- On other machines, `init-ai --update --apply` refreshes managed templates and the project-local skills after the wrapper pulls this repository.
 
 ## Consumer vs editor installs
 

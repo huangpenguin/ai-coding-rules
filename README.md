@@ -26,15 +26,15 @@ init-ai
 
 **Editor machine** (exactly one): keep a normal git checkout and push to both configured remotes. Consumers only pull.
 
-This applies only the language-agnostic `core` pack: a concise `AGENTS.md`, a Claude import of that file, scoped Cursor rules, project memory, and an optional skills installer. It needs no Node.js or network access beyond the template pull.
+This applies only the language-agnostic `core` pack: a concise `AGENTS.md`, a Claude import of that file, scoped Cursor rules, project memory, and project-local [mattpocock/skills](https://github.com/mattpocock/skills). Installing skills requires Node.js/`npx` and network access.
 
 `init-ai --update --apply` refreshes managed rules and removes obsolete rules only when their contents exactly match the former template. Custom versions stay untouched.
 
-**Optional skills:** inside an injected project, run `bash scripts/install-matt-pocock-skills.sh code-review` (or name another skill). Use `--all` only when you need the full set. This needs Node.js/`npx` and network access, and can replace local edits to installed skill files. `init-ai` does not install or refresh skills automatically.
+**Skills update:** `init-ai` and `init-ai --update --apply` install or refresh the full Matt Pocock set in the current project. Installed files under `.agents/skills/` and `.claude/skills/` may replace local edits. To refresh only selected skills later, run `bash scripts/install-matt-pocock-skills.sh code-review` (or name another skill).
 
-## Matt Pocock skills (optional)
+## Matt Pocock skills (included)
 
-Source: [mattpocock/skills](https://github.com/mattpocock/skills). Install is project-local. Use a relevant skill when its workflow helps; ordinary edits do not need the full sequence.
+Source: [mattpocock/skills](https://github.com/mattpocock/skills). Installation is project-local. Use a relevant skill when its workflow helps; ordinary edits do not need the full sequence.
 
 ### Main feature flow (idea → ship)
 
@@ -68,7 +68,7 @@ Full reference and philosophy: upstream [README](https://github.com/mattpocock/s
 
 | Pack | Command | What it adds | Does **not** add |
 |------|---------|--------------|------------------|
-| **core** | `init-ai` | Agent rules, project memory, optional skills installer | Python, CI, Docker |
+| **core** | `init-ai` | Agent rules, project memory, Matt Pocock skills | Python, CI, Docker |
 | **python-quality** | `init-ai add python-quality` | Ruff, Pyright, python-uv rules | CI, GPU, pre-commit hooks |
 | **pre-commit-hooks** | `init-ai add pre-commit-hooks` | Optional local Git hooks (Ruff on commit, Pyright on push) | CI, GPU (auto-includes python-quality) |
 | **ci-quality** | `init-ai add ci-quality` | GitHub/GitLab **quality** CI | GPU train (auto-includes python-quality, not pre-commit) |

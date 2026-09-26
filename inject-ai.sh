@@ -18,7 +18,7 @@ Usage:
   init-ai add <pack> [--update] [--dry-run|--apply]
 
 Packs:
-  core              Agent rules, project memory, optional skills installer (default)
+  core              Agent rules, project memory, Matt Pocock skills (default)
   python-quality    Ruff, Pyright, and python-uv rules
   pre-commit-hooks  Optional local Git hooks (auto-includes python-quality)
   ci-quality        GitHub Actions and GitLab quality CI (auto-includes python-quality)
@@ -33,8 +33,8 @@ Modes:
 Add packs manually in the order your project needs. See README for pack descriptions
 and how to merge .gitlab-ci.yml when using both ci-quality and mlops-gpu.
 
-The core pack copies scripts/install-matt-pocock-skills.sh. Pass one or more
-skill names when needed (requires Node.js/npx + network).
+The core pack installs Matt Pocock skills into the project (requires Node.js/npx
+and network). Use scripts/install-matt-pocock-skills.sh for selected skills later.
 USAGE
 }
 
@@ -358,6 +358,20 @@ prune_obsolete_core_rules() {
   fi
 }
 
+install_matt_pocock_skills() {
+  if ! core_pack_selected; then
+    return
+  fi
+
+  echo
+  if [[ "${DRY_RUN}" == true ]]; then
+    printf '%-8s %s\n' "SKIP" "mattpocock/skills install (dry-run; needs npx + network)"
+    return
+  fi
+
+  bash "${TARGET_DIR}/scripts/install-matt-pocock-skills.sh" --all
+}
+
 install_python_quality_tools() {
   if ! python_quality_pack_selected; then
     return
@@ -418,6 +432,7 @@ for pack in "${PACKS[@]}"; do
 done
 
 prune_obsolete_core_rules
+install_matt_pocock_skills
 install_python_quality_tools
 install_pre_commit_hooks_tools
 
@@ -427,7 +442,4 @@ if [[ "${DRY_RUN}" == true ]]; then
 else
   echo
   echo "AI template packs completed."
-  if core_pack_selected; then
-    echo "Optional skills: bash scripts/install-matt-pocock-skills.sh <skill-name>"
-  fi
 fi
